@@ -33,9 +33,11 @@ Akeneo does not publish an official .NET SDK. The options available are either o
 
 ## Installation
 
-> NuGet package coming soon.
+```bash
+dotnet add package OpenAkeneo.RestApiClient
+```
 
-For now, clone the repository and add a project reference.
+Or search for `OpenAkeneo.RestApiClient` in the NuGet Package Manager.
 
 ---
 
