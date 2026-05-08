@@ -1,0 +1,53 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Rider
+.idea/
+
+# Token cache files
+akeneo_token.*.json
+
+# AI / LLM tooling
+.claude/
+.cursor/
+.aider*
+.copilot/
+.continue/
+.codeium/
+.codex/
+.gemini/
+
+# Test results and coverage
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# NuGet packages
+*.nupkg
+*.snupkg
+
+# local config
+appsettings.json
+appsettings.*.json
+!appsettings.template.json
+!appsettings.example.json
+
+# Secrets and credentials
+*.pfx
+*.p12
+.env
+secrets.json
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Local dev settings
+**/Properties/launchSettings.json

@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- NuGet package metadata -->
+    <PackageId>OpenAkeneo.RestApiClient</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>OpenAkeneo</Authors>
+    <Description>Unofficial .NET client library for the Akeneo PIM REST API with typed models, automatic token management, streaming pagination, retry handling and much more.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/OpenAkeneo/dotnet-rest-api-client</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/OpenAkeneo/dotnet-rest-api-client</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>akeneo;pim;pxm;rest;client;sdk;dotnet;csharp</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>akeneo-logo.png</PackageIcon>
+    <GeneratePackageOnBuild Condition="'$(Configuration)' == 'Release'">true</GeneratePackageOnBuild>
+
+    <!-- Symbol package -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="Resources\akeneo-logo.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
