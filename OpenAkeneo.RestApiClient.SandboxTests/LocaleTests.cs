@@ -15,7 +15,7 @@ public class LocaleTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetLocaleListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetLocaleListAsync();
+        var result = await _fixture.Context.GetLocaleListAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result.Locales);
@@ -24,7 +24,7 @@ public class LocaleTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetLocaleListAsync_WithPageAndLimit_ReturnsCorrectCount()
     {
-        var result = await _fixture.Context.GetLocaleListAsync(page: 1, limit: 5);
+        var result = await _fixture.Context.GetLocaleListAsync(page: 1, limit: 5, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.True(result.Locales.Count <= 5);
@@ -33,7 +33,7 @@ public class LocaleTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetLocaleListFullAsync_ReturnsAllLocales()
     {
-        var result = await _fixture.Context.GetLocaleListFullAsync();
+        var result = await _fixture.Context.GetLocaleListFullAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -43,7 +43,7 @@ public class LocaleTests : IClassFixture<TestBase>
     public async Task StreamLocalesAsync_StreamsLocales()
     {
         var count = 0;
-        await foreach (var item in _fixture.Context.StreamLocalesAsync())
+        await foreach (var item in _fixture.Context.StreamLocalesAsync(ct: TestContext.Current.CancellationToken))
         {
             Assert.NotNull(item);
             count++;
@@ -54,7 +54,7 @@ public class LocaleTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetLocaleAsync_ReturnsLocale()
     {
-        var result = await _fixture.Context.GetLocaleAsync(LocaleCode);
+        var result = await _fixture.Context.GetLocaleAsync(LocaleCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(LocaleCode, result.Code);

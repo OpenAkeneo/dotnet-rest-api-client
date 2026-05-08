@@ -18,7 +18,7 @@ public class AttributeGroupTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetAttributeGroupListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetAttributeGroupListAsync();
+        var result = await _fixture.Context.GetAttributeGroupListAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result.AttributeGroups);
@@ -27,7 +27,7 @@ public class AttributeGroupTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetAttributeGroupListFullAsync_ReturnsAllGroups()
     {
-        var result = await _fixture.Context.GetAttributeGroupListFullAsync();
+        var result = await _fixture.Context.GetAttributeGroupListFullAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -37,7 +37,7 @@ public class AttributeGroupTests : IClassFixture<TestBase>
     public async Task StreamAttributeGroupsAsync_StreamsGroups()
     {
         var count = 0;
-        await foreach (var item in _fixture.Context.StreamAttributeGroupsAsync())
+        await foreach (var item in _fixture.Context.StreamAttributeGroupsAsync(ct: TestContext.Current.CancellationToken))
         {
             Assert.NotNull(item);
             count++;
@@ -48,7 +48,7 @@ public class AttributeGroupTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetAttributeGroupAsync_ReturnsGroup()
     {
-        var result = await _fixture.Context.GetAttributeGroupAsync(AttributeGroupCode);
+        var result = await _fixture.Context.GetAttributeGroupAsync(AttributeGroupCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(AttributeGroupCode, result.Code);
@@ -61,13 +61,15 @@ public class AttributeGroupTests : IClassFixture<TestBase>
     [Fact]
     public async Task CreateOrUpdateAttributeGroupAsync_Lifecycle_CreateThenUpdateThenVerify()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Step 1 — Create the attribute group.
         var created = new AttributeGroup
         {
             Code = OpenAkeneoTestAttributeGroupCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Attribute Group" }
         };
-        var createResult = await _fixture.Context.CreateOrUpdateAttributeGroupAsync(created);
+        var createResult = await _fixture.Context.CreateOrUpdateAttributeGroupAsync(created, ct);
 
         Assert.NotNull(createResult);
         Assert.Equal(OpenAkeneoTestAttributeGroupCode, createResult.Code);
@@ -79,7 +81,7 @@ public class AttributeGroupTests : IClassFixture<TestBase>
             Code = OpenAkeneoTestAttributeGroupCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Attribute Group Updated" }
         };
-        var updateResult = await _fixture.Context.CreateOrUpdateAttributeGroupAsync(updated);
+        var updateResult = await _fixture.Context.CreateOrUpdateAttributeGroupAsync(updated, ct);
 
         Assert.NotNull(updateResult);
         Assert.Equal(OpenAkeneoTestAttributeGroupCode, updateResult.Code);

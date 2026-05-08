@@ -74,7 +74,7 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
     [Fact]
     public async Task GetReferenceEntityListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetReferenceEntityListAsync();
+        var result = await _fixture.Context.GetReferenceEntityListAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result.ReferenceEntities);
@@ -83,7 +83,7 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
     [Fact]
     public async Task GetReferenceEntityAsync_ReturnsEntity()
     {
-        var result = await _fixture.Context.GetReferenceEntityAsync(ReferenceEntityCode);
+        var result = await _fixture.Context.GetReferenceEntityAsync(ReferenceEntityCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(ReferenceEntityCode, result.Code);
@@ -97,7 +97,7 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
     [Fact]
     public async Task GetReferenceEntityAttributeListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetReferenceEntityAttributeListAsync(ReferenceEntityCode);
+        var result = await _fixture.Context.GetReferenceEntityAttributeListAsync(ReferenceEntityCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -106,7 +106,7 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
     [Fact]
     public async Task GetReferenceEntityAttributeAsync_ReturnsAttribute()
     {
-        var result = await _fixture.Context.GetReferenceEntityAttributeAsync(ReferenceEntityCode, AttributeCode);
+        var result = await _fixture.Context.GetReferenceEntityAttributeAsync(ReferenceEntityCode, AttributeCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(AttributeCode, result.Code);
@@ -121,7 +121,7 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
     [Fact]
     public async Task GetReferenceEntityAttributeOptionListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetReferenceEntityAttributeOptionListAsync(ReferenceEntityCode, AttributeCode);
+        var result = await _fixture.Context.GetReferenceEntityAttributeOptionListAsync(ReferenceEntityCode, AttributeCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -130,7 +130,7 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
     [Fact]
     public async Task GetReferenceEntityAttributeOptionAsync_ReturnsOption()
     {
-        var result = await _fixture.Context.GetReferenceEntityAttributeOptionAsync(ReferenceEntityCode, AttributeCode, AttributeOptionCode);
+        var result = await _fixture.Context.GetReferenceEntityAttributeOptionAsync(ReferenceEntityCode, AttributeCode, AttributeOptionCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(AttributeOptionCode, result.Code);
@@ -144,7 +144,7 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
     [Fact]
     public async Task GetReferenceEntityRecordListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetReferenceEntityRecordListAsync(ReferenceEntityCode);
+        var result = await _fixture.Context.GetReferenceEntityRecordListAsync(ReferenceEntityCode, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result.ReferenceEntityRecords);
@@ -153,7 +153,7 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
     [Fact]
     public async Task GetReferenceEntityRecordAsync_ReturnsRecord()
     {
-        var result = await _fixture.Context.GetReferenceEntityRecordAsync(ReferenceEntityCode, RecordCode);
+        var result = await _fixture.Context.GetReferenceEntityRecordAsync(ReferenceEntityCode, RecordCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(RecordCode, result.Code);
@@ -168,7 +168,7 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
     [Fact]
     public async Task DownloadReferenceEntityMediaFileAsync_ReturnsBytes()
     {
-        var result = await _fixture.Context.DownloadReferenceEntityMediaFileAsync(MediaFileCode);
+        var result = await _fixture.Context.DownloadReferenceEntityMediaFileAsync(MediaFileCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -182,13 +182,15 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
     [Fact]
     public async Task CreateOrUpdateReferenceEntityAsync_Lifecycle_CreateThenUpdateThenVerify()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Step 1 — Create the OpenAkeneo reference entity.
         var entity = new ReferenceEntity
         {
             Code = OpenAkeneoReferenceEntityCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Reference Entity" }
         };
-        var createResult = await _fixture.Context.CreateOrUpdateReferenceEntityAsync(entity);
+        var createResult = await _fixture.Context.CreateOrUpdateReferenceEntityAsync(entity, ct);
         Assert.NotNull(createResult);
         Assert.Equal(OpenAkeneoReferenceEntityCode, createResult.Code);
         Assert.Equal("(OpenAkeneo) Test Reference Entity", createResult.Labels?["en_US"]);
@@ -199,7 +201,7 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
             Code = OpenAkeneoReferenceEntityCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Reference Entity Updated" }
         };
-        var updateResult = await _fixture.Context.CreateOrUpdateReferenceEntityAsync(updated);
+        var updateResult = await _fixture.Context.CreateOrUpdateReferenceEntityAsync(updated, ct);
         Assert.NotNull(updateResult);
         Assert.Equal(OpenAkeneoReferenceEntityCode, updateResult.Code);
         Assert.Equal("(OpenAkeneo) Test Reference Entity Updated", updateResult.Labels?["en_US"]);
@@ -208,13 +210,15 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
     [Fact]
     public async Task CreateOrUpdateReferenceEntityRecordAsync_Lifecycle_CreateThenUpdateThenVerify()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Step 1 — Ensure the OpenAkeneo reference entity exists.
         var entity = new ReferenceEntity
         {
             Code = OpenAkeneoReferenceEntityCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Reference Entity" }
         };
-        await _fixture.Context.CreateOrUpdateReferenceEntityAsync(entity);
+        await _fixture.Context.CreateOrUpdateReferenceEntityAsync(entity, ct);
 
         // Step 2 — Create a record under the OpenAkeneo reference entity.
         var record = new ReferenceEntityRecord
@@ -228,7 +232,7 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
                 }
             }
         };
-        var createResult = await _fixture.Context.CreateOrUpdateReferenceEntityRecordAsync(OpenAkeneoReferenceEntityCode, record);
+        var createResult = await _fixture.Context.CreateOrUpdateReferenceEntityRecordAsync(OpenAkeneoReferenceEntityCode, record, ct);
         Assert.NotNull(createResult);
         Assert.Equal(OpenAkeneoRecordCode, createResult.Code);
 
@@ -244,7 +248,7 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
                 }
             }
         };
-        var updateResult = await _fixture.Context.CreateOrUpdateReferenceEntityRecordAsync(OpenAkeneoReferenceEntityCode, updated);
+        var updateResult = await _fixture.Context.CreateOrUpdateReferenceEntityRecordAsync(OpenAkeneoReferenceEntityCode, updated, ct);
         Assert.NotNull(updateResult);
         Assert.Equal(OpenAkeneoRecordCode, updateResult.Code);
     }

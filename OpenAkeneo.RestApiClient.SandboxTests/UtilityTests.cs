@@ -16,7 +16,7 @@ public class UtilityTests : IClassFixture<TestBase>
     {
         try
         {
-            var result = await _fixture.Context.GetUserChannelsPermissionsAsync("admin");
+            var result = await _fixture.Context.GetUserChannelsPermissionsAsync("admin", TestContext.Current.CancellationToken);
             Assert.NotNull(result);
             Assert.Equal("admin", result.UserUuid);
         }
@@ -31,7 +31,7 @@ public class UtilityTests : IClassFixture<TestBase>
     {
         try
         {
-            var result = await _fixture.Context.GetUserLocalesPermissionsAsync("admin");
+            var result = await _fixture.Context.GetUserLocalesPermissionsAsync("admin", TestContext.Current.CancellationToken);
             Assert.NotNull(result);
             Assert.Equal("admin", result.UserUuid);
         }
@@ -44,7 +44,7 @@ public class UtilityTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetApiOverviewAsync_ReturnsOverview()
     {
-        var result = await _fixture.Context.GetApiOverviewAsync();
+        var result = await _fixture.Context.GetApiOverviewAsync(TestContext.Current.CancellationToken);
         Assert.NotNull(result);
         Assert.NotNull(result.Host);
         Assert.NotNull(result.Routes);
@@ -55,7 +55,7 @@ public class UtilityTests : IClassFixture<TestBase>
     {
         try
         {
-            var result = await _fixture.Context.GetExtensionListAsync(limit: 5);
+            var result = await _fixture.Context.GetExtensionListAsync(limit: 5, ct: TestContext.Current.CancellationToken);
             Assert.NotNull(result);
         }
         catch (Exception ex) when (ex.Message.Contains("Forbidden") || ex.Message.Contains("NotFound"))
@@ -69,7 +69,7 @@ public class UtilityTests : IClassFixture<TestBase>
     {
         try
         {
-            var result = await _fixture.Context.GetModelizationSuggestionListAsync(limit: 5);
+            var result = await _fixture.Context.GetModelizationSuggestionListAsync(limit: 5, ct: TestContext.Current.CancellationToken);
             Assert.NotNull(result);
         }
         catch (Exception ex) when (ex.Message.Contains("Forbidden") || ex.Message.Contains("NotFound") || ex.Message.Contains("UnprocessableEntity"))

@@ -37,6 +37,10 @@ namespace OpenAkeneo.RestApiClient
             return Uri.UnescapeDataString(end < 0 ? url[idx..] : url[idx..end]);
         }
 
+        /// <summary>Returns a page of reference entities, optionally starting after a cursor value.</summary>
+        /// <param name="searchAfter">Cursor value for keyset pagination.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A <see cref="ReferenceEntityList"/> with HAL navigation links.</returns>
         public async Task<ReferenceEntityList> GetReferenceEntityListAsync(string? searchAfter = null, CancellationToken ct = default)
         {
             var queryParameters = new Dictionary<string, string>();
@@ -47,6 +51,10 @@ namespace OpenAkeneo.RestApiClient
             return await GetReferenceEntityListAsync(queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns a reference entity page using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A <see cref="ReferenceEntityList"/> with HAL navigation links.</returns>
         public async Task<ReferenceEntityList> GetReferenceEntityListAsync(Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/reference-entities";
@@ -58,6 +66,10 @@ namespace OpenAkeneo.RestApiClient
             return new ReferenceEntityList { Links = links, ReferenceEntities = items };
         }
 
+        /// <summary>Returns a single reference entity by its code.</summary>
+        /// <param name="referenceEntityCode">The reference entity code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="ReferenceEntity"/>.</returns>
         public async Task<ReferenceEntity> GetReferenceEntityAsync(string referenceEntityCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/reference-entities/{Uri.EscapeDataString(referenceEntityCode)}";
@@ -67,6 +79,10 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<ReferenceEntity>(responseString, url);
         }
 
+        /// <summary>Creates or updates a reference entity via HTTP PATCH then returns the refreshed entity.</summary>
+        /// <param name="referenceEntity">The reference entity to create or update. <see cref="ReferenceEntity.Code"/> must be set.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The updated <see cref="ReferenceEntity"/> as returned by the API.</returns>
         public async Task<ReferenceEntity> CreateOrUpdateReferenceEntityAsync(ReferenceEntity referenceEntity, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/reference-entities/{Uri.EscapeDataString(referenceEntity.Code)}";
@@ -78,6 +94,10 @@ namespace OpenAkeneo.RestApiClient
 
         #region Reference entity attribute
 
+        /// <summary>Returns all attributes for a given reference entity.</summary>
+        /// <param name="referenceEntityCode">The reference entity code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A <see cref="ReferenceEntityAttributeList"/>.</returns>
         public async Task<ReferenceEntityAttributeList> GetReferenceEntityAttributeListAsync(string referenceEntityCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/reference-entities/{Uri.EscapeDataString(referenceEntityCode)}/attributes";
@@ -87,6 +107,11 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<ReferenceEntityAttributeList>(responseString, url);
         }
 
+        /// <summary>Returns a single attribute for a reference entity.</summary>
+        /// <param name="referenceEntityCode">The reference entity code.</param>
+        /// <param name="attributeCode">The attribute code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="ReferenceEntityAttribute"/>.</returns>
         public async Task<ReferenceEntityAttribute> GetReferenceEntityAttributeAsync(string referenceEntityCode, string attributeCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/reference-entities/{Uri.EscapeDataString(referenceEntityCode)}/attributes/{Uri.EscapeDataString(attributeCode)}";
@@ -96,6 +121,11 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<ReferenceEntityAttribute>(responseString, url);
         }
 
+        /// <summary>Creates or updates a reference entity attribute via HTTP PATCH then returns the refreshed entity.</summary>
+        /// <param name="referenceEntityCode">The reference entity code.</param>
+        /// <param name="attribute">The attribute to create or update.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The updated <see cref="ReferenceEntityAttribute"/> as returned by the API.</returns>
         public async Task<ReferenceEntityAttribute> CreateOrUpdateReferenceEntityAttributeAsync(string referenceEntityCode, ReferenceEntityAttribute attribute, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/reference-entities/{Uri.EscapeDataString(referenceEntityCode)}/attributes/{Uri.EscapeDataString(attribute.Code)}";
@@ -107,6 +137,11 @@ namespace OpenAkeneo.RestApiClient
 
         #region Reference entity attribute option
 
+        /// <summary>Returns all options for a given reference entity attribute.</summary>
+        /// <param name="referenceEntityCode">The reference entity code.</param>
+        /// <param name="attributeCode">The attribute code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A <see cref="ReferenceEntityAttributeOptionList"/>.</returns>
         public async Task<ReferenceEntityAttributeOptionList> GetReferenceEntityAttributeOptionListAsync(string referenceEntityCode, string attributeCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/reference-entities/{Uri.EscapeDataString(referenceEntityCode)}/attributes/{Uri.EscapeDataString(attributeCode)}/options";
@@ -116,6 +151,12 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<ReferenceEntityAttributeOptionList>(responseString, url);
         }
 
+        /// <summary>Returns a single option for a reference entity attribute.</summary>
+        /// <param name="referenceEntityCode">The reference entity code.</param>
+        /// <param name="attributeCode">The attribute code.</param>
+        /// <param name="optionCode">The option code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="ReferenceEntityAttributeOption"/>.</returns>
         public async Task<ReferenceEntityAttributeOption> GetReferenceEntityAttributeOptionAsync(string referenceEntityCode, string attributeCode, string optionCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/reference-entities/{Uri.EscapeDataString(referenceEntityCode)}/attributes/{Uri.EscapeDataString(attributeCode)}/options/{Uri.EscapeDataString(optionCode)}";
@@ -125,6 +166,12 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<ReferenceEntityAttributeOption>(responseString, url);
         }
 
+        /// <summary>Creates or updates a reference entity attribute option via HTTP PATCH then returns the refreshed entity.</summary>
+        /// <param name="referenceEntityCode">The reference entity code.</param>
+        /// <param name="attributeCode">The attribute code.</param>
+        /// <param name="option">The option to create or update.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The updated <see cref="ReferenceEntityAttributeOption"/> as returned by the API.</returns>
         public async Task<ReferenceEntityAttributeOption> CreateOrUpdateReferenceEntityAttributeOptionAsync(string referenceEntityCode, string attributeCode, ReferenceEntityAttributeOption option, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/reference-entities/{Uri.EscapeDataString(referenceEntityCode)}/attributes/{Uri.EscapeDataString(attributeCode)}/options/{Uri.EscapeDataString(option.Code)}";
@@ -136,6 +183,14 @@ namespace OpenAkeneo.RestApiClient
 
         #region Reference entity record
 
+        /// <summary>Returns a page of records for a given reference entity.</summary>
+        /// <param name="referenceEntityCode">The reference entity code.</param>
+        /// <param name="search">Optional JSON-encoded search filter.</param>
+        /// <param name="channel">Optional channel scope.</param>
+        /// <param name="locales">Optional comma-separated locale codes.</param>
+        /// <param name="searchAfter">Cursor for keyset pagination.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A <see cref="ReferenceEntityRecordList"/> with HAL navigation links.</returns>
         public async Task<ReferenceEntityRecordList> GetReferenceEntityRecordListAsync(string referenceEntityCode, string? search = null, string? channel = null, string? locales = null, string? searchAfter = null, CancellationToken ct = default)
         {
             var queryParameters = new Dictionary<string, string>();
@@ -155,6 +210,11 @@ namespace OpenAkeneo.RestApiClient
             return await GetReferenceEntityRecordListAsync(referenceEntityCode, queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns a reference entity record page using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="referenceEntityCode">The reference entity code.</param>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A <see cref="ReferenceEntityRecordList"/> with HAL navigation links.</returns>
         public async Task<ReferenceEntityRecordList> GetReferenceEntityRecordListAsync(string referenceEntityCode, Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/reference-entities/{Uri.EscapeDataString(referenceEntityCode)}/records";
@@ -166,6 +226,11 @@ namespace OpenAkeneo.RestApiClient
             return new ReferenceEntityRecordList { Links = links, ReferenceEntityRecords = items };
         }
 
+        /// <summary>Returns a single record for a reference entity.</summary>
+        /// <param name="referenceEntityCode">The reference entity code.</param>
+        /// <param name="recordCode">The record code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="ReferenceEntityRecord"/>.</returns>
         public async Task<ReferenceEntityRecord> GetReferenceEntityRecordAsync(string referenceEntityCode, string recordCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/reference-entities/{Uri.EscapeDataString(referenceEntityCode)}/records/{Uri.EscapeDataString(recordCode)}";
@@ -175,6 +240,11 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<ReferenceEntityRecord>(responseString, url);
         }
 
+        /// <summary>Creates or updates a reference entity record via HTTP PATCH then returns the refreshed entity.</summary>
+        /// <param name="referenceEntityCode">The reference entity code.</param>
+        /// <param name="record">The record to create or update. <see cref="ReferenceEntityRecord.Code"/> must be set.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The updated <see cref="ReferenceEntityRecord"/> as returned by the API.</returns>
         public async Task<ReferenceEntityRecord> CreateOrUpdateReferenceEntityRecordAsync(string referenceEntityCode, ReferenceEntityRecord record, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/reference-entities/{Uri.EscapeDataString(referenceEntityCode)}/records/{Uri.EscapeDataString(record.Code)}";

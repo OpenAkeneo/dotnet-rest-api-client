@@ -13,7 +13,7 @@ public class MeasurementFamilyTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetMeasurementFamilyListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetMeasurementFamilyListAsync();
+        var result = await _fixture.Context.GetMeasurementFamilyListAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -22,7 +22,7 @@ public class MeasurementFamilyTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetMeasurementFamilyListAsync_ItemsHaveCode()
     {
-        var result = await _fixture.Context.GetMeasurementFamilyListAsync();
+        var result = await _fixture.Context.GetMeasurementFamilyListAsync(TestContext.Current.CancellationToken);
 
         Assert.All(result, family => Assert.False(string.IsNullOrEmpty(family.Code)));
     }
@@ -30,7 +30,7 @@ public class MeasurementFamilyTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetMeasurementFamilyListAsync_ItemsHaveStandardUnitCode()
     {
-        var result = await _fixture.Context.GetMeasurementFamilyListAsync();
+        var result = await _fixture.Context.GetMeasurementFamilyListAsync(TestContext.Current.CancellationToken);
 
         Assert.All(result, family => Assert.False(string.IsNullOrEmpty(family.StandardUnitCode)));
     }
@@ -38,7 +38,7 @@ public class MeasurementFamilyTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetMeasurementFamilyListAsync_ItemsHaveUnits()
     {
-        var result = await _fixture.Context.GetMeasurementFamilyListAsync();
+        var result = await _fixture.Context.GetMeasurementFamilyListAsync(TestContext.Current.CancellationToken);
 
         Assert.All(result, family => Assert.NotEmpty(family.Units));
     }

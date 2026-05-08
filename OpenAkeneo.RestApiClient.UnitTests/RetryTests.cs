@@ -16,7 +16,7 @@ public class RetryTests
             FakeHttpHandler.Ok("""{"result":"ok"}"""));
 
         var svc = Helpers.BuildService(handler);
-        var result = await svc.HttpGetAsync("/api/rest/v1/products");
+        var result = await svc.HttpGetAsync("/api/rest/v1/products", TestContext.Current.CancellationToken);
 
         Assert.Contains("ok", result);
     }
@@ -32,7 +32,7 @@ public class RetryTests
         var handler = new FakeHttpHandler(responses.ToArray());
         var svc = Helpers.BuildService(handler);
 
-        await Assert.ThrowsAsync<AkeneoApiException>(() => svc.HttpGetAsync("/api/rest/v1/products"));
+        await Assert.ThrowsAsync<AkeneoApiException>(() => svc.HttpGetAsync("/api/rest/v1/products", TestContext.Current.CancellationToken));
         Assert.Equal(7, handler.CallCount);
     }
 }

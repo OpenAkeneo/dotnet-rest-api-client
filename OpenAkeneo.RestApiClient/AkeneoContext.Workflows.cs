@@ -30,6 +30,9 @@ namespace OpenAkeneo.RestApiClient
             }
         }
 
+        /// <summary>Returns all workflows as a materialised list.</summary>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all <see cref="Workflow"/> objects.</returns>
         public async Task<List<Workflow>> GetWorkflowListFullAsync(CancellationToken ct = default)
         {
             var list = new List<Workflow>();
@@ -38,6 +41,11 @@ namespace OpenAkeneo.RestApiClient
             return list;
         }
 
+        /// <summary>Returns a single page of workflows.</summary>
+        /// <param name="page">1-based page number.</param>
+        /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="WorkflowList"/> with HAL navigation links.</returns>
         public async Task<WorkflowList> GetWorkflowListAsync(int page = 1, int limit = 100, CancellationToken ct = default)
         {
             AkeneoContextHelpers.ValidatePagination(page, limit);
@@ -51,6 +59,10 @@ namespace OpenAkeneo.RestApiClient
             return await GetWorkflowListAsync(queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns a workflow page using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="WorkflowList"/> with HAL navigation links.</returns>
         public async Task<WorkflowList> GetWorkflowListAsync(Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/workflows";
@@ -62,6 +74,10 @@ namespace OpenAkeneo.RestApiClient
             return new WorkflowList { Links = links, Workflows = items };
         }
 
+        /// <summary>Returns a single workflow by its UUID.</summary>
+        /// <param name="uuid">The workflow UUID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="Workflow"/>.</returns>
         public async Task<Workflow> GetWorkflowAsync(string uuid, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/workflows/{Uri.EscapeDataString(uuid)}";
@@ -76,6 +92,9 @@ namespace OpenAkeneo.RestApiClient
 
         #region Workflow step assignees
 
+        /// <summary>Streams all assignees for a given workflow step, following HAL pagination automatically.</summary>
+        /// <param name="stepUuid">The workflow step UUID.</param>
+        /// <param name="ct">Cancellation token.</param>
         public async IAsyncEnumerable<WorkflowStepAssignee> StreamWorkflowStepAssigneesAsync(string stepUuid, [EnumeratorCancellation] CancellationToken ct = default)
         {
             for (int page = 1; ; page++)
@@ -90,6 +109,10 @@ namespace OpenAkeneo.RestApiClient
             }
         }
 
+        /// <summary>Returns all assignees for a workflow step as a materialised list.</summary>
+        /// <param name="stepUuid">The workflow step UUID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all <see cref="WorkflowStepAssignee"/> objects.</returns>
         public async Task<List<WorkflowStepAssignee>> GetWorkflowStepAssigneeListFullAsync(string stepUuid, CancellationToken ct = default)
         {
             var list = new List<WorkflowStepAssignee>();
@@ -98,6 +121,12 @@ namespace OpenAkeneo.RestApiClient
             return list;
         }
 
+        /// <summary>Returns a single page of assignees for a workflow step.</summary>
+        /// <param name="stepUuid">The workflow step UUID.</param>
+        /// <param name="page">1-based page number.</param>
+        /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="WorkflowStepAssigneeList"/> with HAL navigation links.</returns>
         public async Task<WorkflowStepAssigneeList> GetWorkflowStepAssigneeListAsync(string stepUuid, int page = 1, int limit = 100, CancellationToken ct = default)
         {
             AkeneoContextHelpers.ValidatePagination(page, limit);
@@ -111,6 +140,11 @@ namespace OpenAkeneo.RestApiClient
             return await GetWorkflowStepAssigneeListAsync(stepUuid, queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns a workflow step assignee page using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="stepUuid">The workflow step UUID.</param>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="WorkflowStepAssigneeList"/> with HAL navigation links.</returns>
         public async Task<WorkflowStepAssigneeList> GetWorkflowStepAssigneeListAsync(string stepUuid, Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/workflows/steps/{Uri.EscapeDataString(stepUuid)}/assignees";
@@ -127,6 +161,10 @@ namespace OpenAkeneo.RestApiClient
 
         #region Workflow tasks
 
+        /// <summary>Streams all workflow tasks, following HAL pagination automatically.</summary>
+        /// <param name="search">Optional JSON-encoded search filter.</param>
+        /// <param name="withAttributes">When <c>true</c>, includes attribute values in the response.</param>
+        /// <param name="ct">Cancellation token.</param>
         public async IAsyncEnumerable<WorkflowTask> StreamWorkflowTasksAsync(string? search = null, bool withAttributes = false, [EnumeratorCancellation] CancellationToken ct = default)
         {
             for (int page = 1; ; page++)
@@ -141,6 +179,11 @@ namespace OpenAkeneo.RestApiClient
             }
         }
 
+        /// <summary>Returns all workflow tasks as a materialised list.</summary>
+        /// <param name="search">Optional JSON-encoded search filter.</param>
+        /// <param name="withAttributes">When <c>true</c>, includes attribute values in the response.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all <see cref="WorkflowTask"/> objects.</returns>
         public async Task<List<WorkflowTask>> GetWorkflowTaskListFullAsync(string? search = null, bool withAttributes = false, CancellationToken ct = default)
         {
             var list = new List<WorkflowTask>();
@@ -149,6 +192,13 @@ namespace OpenAkeneo.RestApiClient
             return list;
         }
 
+        /// <summary>Returns a single page of workflow tasks.</summary>
+        /// <param name="page">1-based page number.</param>
+        /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="search">Optional JSON-encoded search filter.</param>
+        /// <param name="withAttributes">When <c>true</c>, includes attribute values in the response.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="WorkflowTaskList"/> with HAL navigation links.</returns>
         public async Task<WorkflowTaskList> GetWorkflowTaskListAsync(int page = 1, int limit = 100, string? search = null, bool withAttributes = false, CancellationToken ct = default)
         {
             AkeneoContextHelpers.ValidatePagination(page, limit);
@@ -167,6 +217,10 @@ namespace OpenAkeneo.RestApiClient
             return await GetWorkflowTaskListAsync(queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns a workflow task page using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="WorkflowTaskList"/> with HAL navigation links.</returns>
         public async Task<WorkflowTaskList> GetWorkflowTaskListAsync(Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/workflows/tasks";
@@ -178,6 +232,10 @@ namespace OpenAkeneo.RestApiClient
             return new WorkflowTaskList { Links = links, Tasks = items };
         }
 
+        /// <summary>Returns a single workflow task by its UUID.</summary>
+        /// <param name="uuid">The workflow task UUID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="WorkflowTask"/>.</returns>
         public async Task<WorkflowTask> GetWorkflowTaskAsync(string uuid, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/workflows/tasks/{Uri.EscapeDataString(uuid)}";

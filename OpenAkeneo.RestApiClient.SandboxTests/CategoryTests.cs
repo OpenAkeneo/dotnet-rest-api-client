@@ -22,7 +22,7 @@ public class CategoryTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetCategoryListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetCategoryListAsync();
+        var result = await _fixture.Context.GetCategoryListAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result.Categories);
@@ -31,7 +31,7 @@ public class CategoryTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetCategoryListAsync_WithPageAndLimit_ReturnsCorrectCount()
     {
-        var result = await _fixture.Context.GetCategoryListAsync(page: 1, limit: 5);
+        var result = await _fixture.Context.GetCategoryListAsync(page: 1, limit: 5, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.True(result.Categories.Count <= 5);
@@ -40,7 +40,7 @@ public class CategoryTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetCategoryListFullAsync_ReturnsAllCategories()
     {
-        var result = await _fixture.Context.GetCategoryListFullAsync();
+        var result = await _fixture.Context.GetCategoryListFullAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -50,7 +50,7 @@ public class CategoryTests : IClassFixture<TestBase>
     public async Task StreamCategoriesAsync_StreamsCategories()
     {
         var count = 0;
-        await foreach (var item in _fixture.Context.StreamCategoriesAsync())
+        await foreach (var item in _fixture.Context.StreamCategoriesAsync(ct: TestContext.Current.CancellationToken))
         {
             Assert.NotNull(item);
             count++;
@@ -61,7 +61,7 @@ public class CategoryTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetCategoryAsync_ReturnsCategory()
     {
-        var result = await _fixture.Context.GetCategoryAsync(CategoryCode);
+        var result = await _fixture.Context.GetCategoryAsync(CategoryCode, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(CategoryCode, result.Code);
@@ -70,7 +70,7 @@ public class CategoryTests : IClassFixture<TestBase>
     [Fact]
     public async Task DownloadCategoryMediaFileAsync_ReturnsBytes()
     {
-        var result = await _fixture.Context.DownloadCategoryMediaFileAsync(MediaFileCode);
+        var result = await _fixture.Context.DownloadCategoryMediaFileAsync(MediaFileCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -82,13 +82,15 @@ public class CategoryTests : IClassFixture<TestBase>
     [Fact]
     public async Task CreateOrUpdateCategoryAsync_Lifecycle_CreateThenUpdateThenVerify()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Step 1 — Create the OpenAkeneo root category.
         var root = new Category
         {
             Code = OpenAkeneoRootCategoryCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Root" }
         };
-        var rootResult = await _fixture.Context.CreateOrUpdateCategoryAsync(root);
+        var rootResult = await _fixture.Context.CreateOrUpdateCategoryAsync(root, ct);
         Assert.NotNull(rootResult);
         Assert.Equal(OpenAkeneoRootCategoryCode, rootResult.Code);
         Assert.Equal("(OpenAkeneo) Root", rootResult.Labels["en_US"]);
@@ -100,7 +102,7 @@ public class CategoryTests : IClassFixture<TestBase>
             Parent = OpenAkeneoRootCategoryCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Category" }
         };
-        var childResult = await _fixture.Context.CreateOrUpdateCategoryAsync(child);
+        var childResult = await _fixture.Context.CreateOrUpdateCategoryAsync(child, ct);
         Assert.NotNull(childResult);
         Assert.Equal(OpenAkeneoTestCategoryCode, childResult.Code);
         Assert.Equal(OpenAkeneoRootCategoryCode, childResult.Parent);
@@ -112,7 +114,7 @@ public class CategoryTests : IClassFixture<TestBase>
             Code = OpenAkeneoRootCategoryCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Root Updated" }
         };
-        var rootUpdateResult = await _fixture.Context.CreateOrUpdateCategoryAsync(rootUpdated);
+        var rootUpdateResult = await _fixture.Context.CreateOrUpdateCategoryAsync(rootUpdated, ct);
         Assert.NotNull(rootUpdateResult);
         Assert.Equal(OpenAkeneoRootCategoryCode, rootUpdateResult.Code);
         Assert.Equal("(OpenAkeneo) Root Updated", rootUpdateResult.Labels["en_US"]);
@@ -123,7 +125,7 @@ public class CategoryTests : IClassFixture<TestBase>
             Code = OpenAkeneoTestCategoryCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Category Updated" }
         };
-        var childUpdateResult = await _fixture.Context.CreateOrUpdateCategoryAsync(childUpdated);
+        var childUpdateResult = await _fixture.Context.CreateOrUpdateCategoryAsync(childUpdated, ct);
         Assert.NotNull(childUpdateResult);
         Assert.Equal(OpenAkeneoTestCategoryCode, childUpdateResult.Code);
         Assert.Equal("(OpenAkeneo) Test Category Updated", childUpdateResult.Labels["en_US"]);

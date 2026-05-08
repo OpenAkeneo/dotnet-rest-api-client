@@ -23,13 +23,15 @@ public class AkeneoE2ETests : IClassFixture<TestBase>
     [Fact]
     public async Task CreateOrUpdate_FullCatalog_OpenAkeneo_E2E_Test()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // 1. Create root category
         var root = new Category
         {
             Code = OpenAkeneoRootCategoryCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Root" }
         };
-        var rootResult = await _fixture.Context.CreateOrUpdateCategoryAsync(root);
+        var rootResult = await _fixture.Context.CreateOrUpdateCategoryAsync(root, ct);
         Assert.NotNull(rootResult);
 
         // 2. Create child category
@@ -39,7 +41,7 @@ public class AkeneoE2ETests : IClassFixture<TestBase>
             Parent = OpenAkeneoRootCategoryCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Category" }
         };
-        var childResult = await _fixture.Context.CreateOrUpdateCategoryAsync(child);
+        var childResult = await _fixture.Context.CreateOrUpdateCategoryAsync(child, ct);
         Assert.NotNull(childResult);
         Assert.Equal(OpenAkeneoRootCategoryCode, childResult.Parent);
 
@@ -52,7 +54,7 @@ public class AkeneoE2ETests : IClassFixture<TestBase>
             Locales = new List<string> { "en_US" },
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Channel" }
         };
-        var channelResult = await _fixture.Context.CreateOrUpdateChannelAsync(channel);
+        var channelResult = await _fixture.Context.CreateOrUpdateChannelAsync(channel, ct);
         Assert.NotNull(channelResult);
         Assert.Equal(OpenAkeneoTestChannelCode, channelResult.Code);
 
@@ -62,7 +64,7 @@ public class AkeneoE2ETests : IClassFixture<TestBase>
             Code = OpenAkeneoTestAttributeGroupCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Attribute Group" }
         };
-        var groupResult = await _fixture.Context.CreateOrUpdateAttributeGroupAsync(attributeGroup);
+        var groupResult = await _fixture.Context.CreateOrUpdateAttributeGroupAsync(attributeGroup, ct);
         Assert.NotNull(groupResult);
 
         // 5. Create attribute
@@ -73,7 +75,7 @@ public class AkeneoE2ETests : IClassFixture<TestBase>
             Group = OpenAkeneoTestAttributeGroupCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Attribute" }
         };
-        var attributeResult = await _fixture.Context.CreateOrUpdateAttributeAsync(attribute);
+        var attributeResult = await _fixture.Context.CreateOrUpdateAttributeAsync(attribute, ct);
         Assert.NotNull(attributeResult);
         Assert.Equal(OpenAkeneoTestAttributeGroupCode, attributeResult.Group);
 
@@ -89,7 +91,7 @@ public class AkeneoE2ETests : IClassFixture<TestBase>
             },
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Family" }
         };
-        var familyResult = await _fixture.Context.CreateOrUpdateFamilyAsync(family);
+        var familyResult = await _fixture.Context.CreateOrUpdateFamilyAsync(family, ct);
         Assert.NotNull(familyResult);
         Assert.Contains(OpenAkeneoTestAttributeCode, familyResult.Attributes);
 
@@ -108,7 +110,7 @@ public class AkeneoE2ETests : IClassFixture<TestBase>
                 }
             }
         };
-        var productResult = await _fixture.Context.CreateOrUpdateProductIdentifierAsync(product);
+        var productResult = await _fixture.Context.CreateOrUpdateProductIdentifierAsync(product, ct);
         Assert.NotNull(productResult);
         Assert.Equal(OpenAkeneoTestFamilyCode, productResult.Family);
         Assert.Contains(OpenAkeneoTestCategoryCode, productResult.Categories);

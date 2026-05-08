@@ -13,7 +13,7 @@ public class SystemTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetSystemInformationAsync_ReturnsSystemInformation()
     {
-        var result = await _fixture.Context.GetSystemInformationAsync();
+        var result = await _fixture.Context.GetSystemInformationAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result.Version);

@@ -22,7 +22,7 @@ public class FamilyTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetFamilyListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetFamilyListAsync();
+        var result = await _fixture.Context.GetFamilyListAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result.Families);
@@ -31,7 +31,7 @@ public class FamilyTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetFamilyListAsync_WithPageAndLimit_ReturnsCorrectCount()
     {
-        var result = await _fixture.Context.GetFamilyListAsync(page: 1, limit: 5);
+        var result = await _fixture.Context.GetFamilyListAsync(page: 1, limit: 5, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.True(result.Families.Count <= 5);
@@ -40,7 +40,7 @@ public class FamilyTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetFamilyListFullAsync_ReturnsAllFamilies()
     {
-        var result = await _fixture.Context.GetFamilyListFullAsync();
+        var result = await _fixture.Context.GetFamilyListFullAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -50,7 +50,7 @@ public class FamilyTests : IClassFixture<TestBase>
     public async Task StreamFamiliesAsync_StreamsFamilies()
     {
         var count = 0;
-        await foreach (var item in _fixture.Context.StreamFamiliesAsync())
+        await foreach (var item in _fixture.Context.StreamFamiliesAsync(ct: TestContext.Current.CancellationToken))
         {
             Assert.NotNull(item);
             count++;
@@ -61,7 +61,7 @@ public class FamilyTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetFamilyAsync_ReturnsFamily()
     {
-        var result = await _fixture.Context.GetFamilyAsync(FamilyCode);
+        var result = await _fixture.Context.GetFamilyAsync(FamilyCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(FamilyCode, result.Code);
@@ -76,6 +76,8 @@ public class FamilyTests : IClassFixture<TestBase>
     [Fact]
     public async Task CreateOrUpdateFamilyAsync_Lifecycle_CreateThenUpdateThenVerify()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Step 1 — Create the OpenAkeneo family.
         var family = new Family
         {
@@ -83,7 +85,7 @@ public class FamilyTests : IClassFixture<TestBase>
             AttributeAsLabel = "sku",
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Family" }
         };
-        var createResult = await _fixture.Context.CreateOrUpdateFamilyAsync(family);
+        var createResult = await _fixture.Context.CreateOrUpdateFamilyAsync(family, ct);
         Assert.NotNull(createResult);
         Assert.Equal(OpenAkeneoFamilyCode, createResult.Code);
         Assert.Equal("(OpenAkeneo) Test Family", createResult.Labels?["en_US"]);
@@ -94,7 +96,7 @@ public class FamilyTests : IClassFixture<TestBase>
             Code = OpenAkeneoFamilyCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Family Updated" }
         };
-        var updateResult = await _fixture.Context.CreateOrUpdateFamilyAsync(updated);
+        var updateResult = await _fixture.Context.CreateOrUpdateFamilyAsync(updated, ct);
         Assert.NotNull(updateResult);
         Assert.Equal(OpenAkeneoFamilyCode, updateResult.Code);
         Assert.Equal("(OpenAkeneo) Test Family Updated", updateResult.Labels?["en_US"]);

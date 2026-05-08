@@ -28,6 +28,13 @@ namespace OpenAkeneo.RestApiClient
             }
         }
 
+        /// <summary>Returns all categories as a materialised list.</summary>
+        /// <param name="search">Optional JSON-encoded search filter.</param>
+        /// <param name="withCount">Include total item count in API response.</param>
+        /// <param name="withPosition">Include category position in tree.</param>
+        /// <param name="withEnrichedAttributes">Include enriched category attribute values.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all <see cref="Category"/> objects.</returns>
         public async Task<List<Category>> GetCategoryListFullAsync(string? search = null, bool withCount = false, bool withPosition = false, bool withEnrichedAttributes = false, CancellationToken ct = default)
         {
             var list = new List<Category>();
@@ -36,6 +43,15 @@ namespace OpenAkeneo.RestApiClient
             return list;
         }
 
+        /// <summary>Returns a single page of categories.</summary>
+        /// <param name="page">1-based page number.</param>
+        /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="search">Optional JSON-encoded search filter.</param>
+        /// <param name="withCount">Include total item count in API response.</param>
+        /// <param name="withPosition">Include category position in tree.</param>
+        /// <param name="withEnrichedAttributes">Include enriched category attribute values.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="CategoryList"/> with HAL navigation links.</returns>
         public async Task<CategoryList> GetCategoryListAsync(int page = 1, int limit = 100, string? search = null, bool withCount = false, bool withPosition = false, bool withEnrichedAttributes = false, CancellationToken ct = default)
         {
             AkeneoContextHelpers.ValidatePagination(page, limit);
@@ -54,6 +70,10 @@ namespace OpenAkeneo.RestApiClient
             return await GetCategoryListAsync(queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns a category page using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="CategoryList"/> with HAL navigation links.</returns>
         public async Task<CategoryList> GetCategoryListAsync(Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/categories";
@@ -65,6 +85,12 @@ namespace OpenAkeneo.RestApiClient
             return new CategoryList { Links = links, Categories = items };
         }
 
+        /// <summary>Returns a single category by its code.</summary>
+        /// <param name="code">The category code.</param>
+        /// <param name="withPosition">Include category position in tree.</param>
+        /// <param name="withEnrichedAttributes">Include enriched category attribute values.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="Category"/>.</returns>
         public async Task<Category> GetCategoryAsync(string code, bool withPosition = false, bool withEnrichedAttributes = false, CancellationToken ct = default)
         {
             var queryParameters = new Dictionary<string, string>();
@@ -75,6 +101,11 @@ namespace OpenAkeneo.RestApiClient
             return await GetCategoryAsync(code, queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns a single category by its code using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="code">The category code.</param>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="Category"/>.</returns>
         public async Task<Category> GetCategoryAsync(string code, Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/categories/{Uri.EscapeDataString(code)}";
@@ -95,6 +126,10 @@ namespace OpenAkeneo.RestApiClient
             return await _service.HttpGetBytesAsync($"/api/rest/v1/category-media-files/{pathEscaped}/download", ct).ConfigureAwait(false);
         }
 
+        /// <summary>Creates or updates a category via HTTP PATCH then returns the refreshed entity.</summary>
+        /// <param name="category">The category to create or update. <see cref="Category.Code"/> must be set.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The updated <see cref="Category"/> as returned by the API.</returns>
         public async Task<Category> CreateOrUpdateCategoryAsync(Category category, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/categories/{Uri.EscapeDataString(category.Code)}";

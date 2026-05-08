@@ -16,7 +16,7 @@ public class CatalogTests : IClassFixture<TestBase>
     {
         try
         {
-            var result = await _fixture.Context.GetCatalogListAsync(limit: 5);
+            var result = await _fixture.Context.GetCatalogListAsync(limit: 5, ct: TestContext.Current.CancellationToken);
             Assert.NotNull(result);
             Assert.NotNull(result.Catalogs);
         }
@@ -29,15 +29,16 @@ public class CatalogTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetCatalogAsync_ProductUuidList_ReturnsOrForbidden()
     {
+        var ct = TestContext.Current.CancellationToken;
         try
         {
-            var result = await _fixture.Context.GetCatalogListAsync(limit: 1);
+            var result = await _fixture.Context.GetCatalogListAsync(limit: 1, ct: ct);
             if (result.Catalogs != null && result.Catalogs.Count > 0)
             {
                 var catalogId = result.Catalogs[0].Id;
                 if (!string.IsNullOrEmpty(catalogId))
                 {
-                    var uuids = await _fixture.Context.GetCatalogProductUuidListAsync(catalogId);
+                    var uuids = await _fixture.Context.GetCatalogProductUuidListAsync(catalogId, ct: ct);
                     Assert.NotNull(uuids);
                 }
             }
@@ -51,15 +52,16 @@ public class CatalogTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetCatalogMappedProductListAsync_ReturnsStringOrForbidden()
     {
+        var ct = TestContext.Current.CancellationToken;
         try
         {
-            var result = await _fixture.Context.GetCatalogListAsync(limit: 1);
+            var result = await _fixture.Context.GetCatalogListAsync(limit: 1, ct: ct);
             if (result.Catalogs != null && result.Catalogs.Count > 0)
             {
                 var catalogId = result.Catalogs[0].Id;
                 if (!string.IsNullOrEmpty(catalogId))
                 {
-                    var mappedProducts = await _fixture.Context.GetCatalogMappedProductListAsync(catalogId);
+                    var mappedProducts = await _fixture.Context.GetCatalogMappedProductListAsync(catalogId, ct: ct);
                     Assert.NotNull(mappedProducts);
                     Assert.NotEmpty(mappedProducts);
                 }

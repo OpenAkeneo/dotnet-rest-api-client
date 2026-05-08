@@ -25,6 +25,9 @@ namespace OpenAkeneo.RestApiClient
             }
         }
 
+        /// <summary>Returns all job definitions as a materialised list.</summary>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all <see cref="Job"/> objects.</returns>
         public async Task<List<Job>> GetJobListFullAsync(CancellationToken ct = default)
         {
             var list = new List<Job>();
@@ -33,6 +36,11 @@ namespace OpenAkeneo.RestApiClient
             return list;
         }
 
+        /// <summary>Returns a single page of job definitions.</summary>
+        /// <param name="page">1-based page number.</param>
+        /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="JobList"/> with HAL navigation links.</returns>
         public async Task<JobList> GetJobListAsync(int page = 1, int limit = 100, CancellationToken ct = default)
         {
             AkeneoContextHelpers.ValidatePagination(page, limit);
@@ -46,6 +54,10 @@ namespace OpenAkeneo.RestApiClient
             return await GetJobListAsync(queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns a job list page using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="JobList"/> with HAL navigation links.</returns>
         public async Task<JobList> GetJobListAsync(Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/jobs";
@@ -57,6 +69,10 @@ namespace OpenAkeneo.RestApiClient
             return new JobList { Links = links, Jobs = items };
         }
 
+        /// <summary>Returns a single job definition by its code.</summary>
+        /// <param name="code">The job code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="Job"/>.</returns>
         public async Task<Job> GetJobAsync(string code, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/jobs/{Uri.EscapeDataString(code)}";
@@ -66,6 +82,8 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<Job>(responseString, url);
         }
 
+        /// <summary>Streams all job executions, following HAL pagination automatically.</summary>
+        /// <param name="ct">Cancellation token.</param>
         public async IAsyncEnumerable<JobExecutionBrief> StreamJobExecutionsAsync([EnumeratorCancellation] CancellationToken ct = default)
         {
             for (int page = 1; ; page++)
@@ -80,6 +98,9 @@ namespace OpenAkeneo.RestApiClient
             }
         }
 
+        /// <summary>Returns all job executions as a materialised list.</summary>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all <see cref="JobExecutionBrief"/> objects.</returns>
         public async Task<List<JobExecutionBrief>> GetJobExecutionListFullAsync(CancellationToken ct = default)
         {
             var list = new List<JobExecutionBrief>();
@@ -88,6 +109,11 @@ namespace OpenAkeneo.RestApiClient
             return list;
         }
 
+        /// <summary>Returns a single page of job executions.</summary>
+        /// <param name="page">1-based page number.</param>
+        /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="JobExecutionList"/> with HAL navigation links.</returns>
         public async Task<JobExecutionList> GetJobExecutionListAsync(int page = 1, int limit = 100, CancellationToken ct = default)
         {
             AkeneoContextHelpers.ValidatePagination(page, limit);
@@ -101,6 +127,10 @@ namespace OpenAkeneo.RestApiClient
             return await GetJobExecutionListAsync(queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns a job execution page using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="JobExecutionList"/> with HAL navigation links.</returns>
         public async Task<JobExecutionList> GetJobExecutionListAsync(Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/jobs/executions";
@@ -112,6 +142,10 @@ namespace OpenAkeneo.RestApiClient
             return new JobExecutionList { Links = links, JobExecutions = items };
         }
 
+        /// <summary>Returns the details of a single job execution by its ID.</summary>
+        /// <param name="id">The job execution ID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="JobExecution"/>.</returns>
         public async Task<JobExecution> GetJobExecutionAsync(int id, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/jobs/executions/{id}";

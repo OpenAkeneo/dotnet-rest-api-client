@@ -15,7 +15,7 @@ public class AttributeTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetAttributeListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetAttributeListAsync();
+        var result = await _fixture.Context.GetAttributeListAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result.Attributes);
@@ -24,7 +24,7 @@ public class AttributeTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetAttributeListAsync_WithPageAndLimit_ReturnsCorrectCount()
     {
-        var result = await _fixture.Context.GetAttributeListAsync(page: 1, limit: 5);
+        var result = await _fixture.Context.GetAttributeListAsync(page: 1, limit: 5, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.True(result.Attributes.Count <= 5);
@@ -33,7 +33,7 @@ public class AttributeTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetAttributeListFullAsync_ReturnsAllAttributes()
     {
-        var result = await _fixture.Context.GetAttributeListFullAsync();
+        var result = await _fixture.Context.GetAttributeListFullAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -43,7 +43,7 @@ public class AttributeTests : IClassFixture<TestBase>
     public async Task StreamAttributesAsync_StreamsAttributes()
     {
         var count = 0;
-        await foreach (var item in _fixture.Context.StreamAttributesAsync())
+        await foreach (var item in _fixture.Context.StreamAttributesAsync(ct: TestContext.Current.CancellationToken))
         {
             Assert.NotNull(item);
             count++;
@@ -54,7 +54,7 @@ public class AttributeTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetAttributeAsync_ReturnsAttribute()
     {
-        var result = await _fixture.Context.GetAttributeAsync(AttributeCode);
+        var result = await _fixture.Context.GetAttributeAsync(AttributeCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(AttributeCode, result.Code);

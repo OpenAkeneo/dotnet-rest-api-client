@@ -38,12 +38,13 @@ public class WorkflowTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetWorkflowListAsync_ReturnsList()
     {
+        var ct = TestContext.Current.CancellationToken;
         try
         {
             WorkflowList? result = null;
             await RunWithTimeout(async () =>
             {
-                result = await _fixture.Context.GetWorkflowListAsync();
+                result = await _fixture.Context.GetWorkflowListAsync(ct: ct);
             });
 
             Assert.NotNull(result);
@@ -58,12 +59,13 @@ public class WorkflowTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetWorkflowListAsync_WithPageAndLimit_ReturnsCorrectCount()
     {
+        var ct = TestContext.Current.CancellationToken;
         try
         {
             WorkflowList? result = null;
             await RunWithTimeout(async () =>
             {
-                result = await _fixture.Context.GetWorkflowListAsync(page: 1, limit: 5);
+                result = await _fixture.Context.GetWorkflowListAsync(page: 1, limit: 5, ct: ct);
             });
 
             Assert.NotNull(result);
@@ -78,12 +80,13 @@ public class WorkflowTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetWorkflowListFullAsync_ReturnsAllWorkflows()
     {
+        var ct = TestContext.Current.CancellationToken;
         try
         {
             List<OpenAkeneo.RestApiClient.Models.Workflow>? result = null;
             await RunWithTimeout(async () =>
             {
-                result = await _fixture.Context.GetWorkflowListFullAsync();
+                result = await _fixture.Context.GetWorkflowListFullAsync(ct);
             });
 
             Assert.NotNull(result);
@@ -101,7 +104,7 @@ public class WorkflowTests : IClassFixture<TestBase>
         {
             var count = 0;
             var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            await foreach (var item in _fixture.Context.StreamWorkflowsAsync().WithCancellation(cts.Token))
+            await foreach (var item in _fixture.Context.StreamWorkflowsAsync(TestContext.Current.CancellationToken).WithCancellation(cts.Token))
             {
                 Assert.NotNull(item);
                 count++;
@@ -117,12 +120,13 @@ public class WorkflowTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetWorkflowTaskListAsync_ReturnsList()
     {
+        var ct = TestContext.Current.CancellationToken;
         try
         {
             WorkflowTaskList? result = null;
             await RunWithTimeout(async () =>
             {
-                result = await _fixture.Context.GetWorkflowTaskListAsync();
+                result = await _fixture.Context.GetWorkflowTaskListAsync(ct: ct);
             });
 
             Assert.NotNull(result);
@@ -137,13 +141,14 @@ public class WorkflowTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetWorkflowTaskAsync_ReturnsTask()
     {
+        var ct = TestContext.Current.CancellationToken;
         try
         {
             // First we need a task UUID to query.
             WorkflowTaskList? listResult = null;
             await RunWithTimeout(async () =>
             {
-                listResult = await _fixture.Context.GetWorkflowTaskListAsync(page: 1, limit: 1);
+                listResult = await _fixture.Context.GetWorkflowTaskListAsync(page: 1, limit: 1, ct: ct);
             });
 
             if (listResult?.Tasks?.Count > 0)
@@ -152,7 +157,7 @@ public class WorkflowTests : IClassFixture<TestBase>
                 WorkflowTask? taskResult = null;
                 await RunWithTimeout(async () =>
                 {
-                    taskResult = await _fixture.Context.GetWorkflowTaskAsync(taskUuid);
+                    taskResult = await _fixture.Context.GetWorkflowTaskAsync(taskUuid, ct);
                 });
 
                 Assert.NotNull(taskResult);
@@ -168,13 +173,14 @@ public class WorkflowTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetWorkflowStepAssigneeListAsync_ReturnsList()
     {
+        var ct = TestContext.Current.CancellationToken;
         try
         {
             // First we need a workflow and step code to query.
             WorkflowList? listResult = null;
             await RunWithTimeout(async () =>
             {
-                listResult = await _fixture.Context.GetWorkflowListAsync(page: 1, limit: 1);
+                listResult = await _fixture.Context.GetWorkflowListAsync(page: 1, limit: 1, ct: ct);
             });
 
             if (listResult?.Workflows?.Count > 0 && listResult.Workflows[0].Steps?.Count > 0)
@@ -183,7 +189,7 @@ public class WorkflowTests : IClassFixture<TestBase>
                 WorkflowStepAssigneeList? assigneesResult = null;
                 await RunWithTimeout(async () =>
                 {
-                    assigneesResult = await _fixture.Context.GetWorkflowStepAssigneeListAsync(stepCode);
+                    assigneesResult = await _fixture.Context.GetWorkflowStepAssigneeListAsync(stepCode, ct: ct);
                 });
 
                 Assert.NotNull(assigneesResult);

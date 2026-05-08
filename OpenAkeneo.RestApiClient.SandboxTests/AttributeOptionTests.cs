@@ -22,7 +22,7 @@ public class AttributeOptionTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetAttributeOptionListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetAttributeOptionListAsync(AttributeCode);
+        var result = await _fixture.Context.GetAttributeOptionListAsync(AttributeCode, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result.AttributeOptions);
@@ -31,7 +31,7 @@ public class AttributeOptionTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetAttributeOptionListFullAsync_ReturnsAllOptions()
     {
-        var result = await _fixture.Context.GetAttributeOptionListFullAsync(AttributeCode);
+        var result = await _fixture.Context.GetAttributeOptionListFullAsync(AttributeCode, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -41,7 +41,7 @@ public class AttributeOptionTests : IClassFixture<TestBase>
     public async Task StreamAttributeOptionsAsync_StreamsOptions()
     {
         var count = 0;
-        await foreach (var item in _fixture.Context.StreamAttributeOptionsAsync(AttributeCode))
+        await foreach (var item in _fixture.Context.StreamAttributeOptionsAsync(AttributeCode, ct: TestContext.Current.CancellationToken))
         {
             Assert.NotNull(item);
             count++;
@@ -52,7 +52,7 @@ public class AttributeOptionTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetAttributeOptionAsync_ReturnsOption()
     {
-        var result = await _fixture.Context.GetAttributeOptionAsync(AttributeCode, OptionCode);
+        var result = await _fixture.Context.GetAttributeOptionAsync(AttributeCode, OptionCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(OptionCode, result.Code);
@@ -65,6 +65,8 @@ public class AttributeOptionTests : IClassFixture<TestBase>
     [Fact]
     public async Task CreateOrUpdateAttributeOptionAsync_Lifecycle_CreateThenUpdateThenVerify()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Step 1 — Create a dedicated OpenAkeneo simple-select attribute to own the test options.
         var attribute = new Models.AkeneoAttribute
         {
@@ -73,7 +75,7 @@ public class AttributeOptionTests : IClassFixture<TestBase>
             Group = "other",
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Select Attribute" }
         };
-        var attributeResult = await _fixture.Context.CreateOrUpdateAttributeAsync(attribute);
+        var attributeResult = await _fixture.Context.CreateOrUpdateAttributeAsync(attribute, ct);
         Assert.NotNull(attributeResult);
         Assert.Equal(OpenAkeneoAttributeCode, attributeResult.Code);
         Assert.Equal("pim_catalog_simpleselect", attributeResult.Type);
@@ -85,7 +87,7 @@ public class AttributeOptionTests : IClassFixture<TestBase>
             Code = OpenAkeneoTestOptionCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Option" }
         };
-        var createResult = await _fixture.Context.CreateOrUpdateAttributeOptionAsync(OpenAkeneoAttributeCode, created);
+        var createResult = await _fixture.Context.CreateOrUpdateAttributeOptionAsync(OpenAkeneoAttributeCode, created, ct);
         Assert.NotNull(createResult);
         Assert.Equal(OpenAkeneoTestOptionCode, createResult.Code);
         Assert.Equal(OpenAkeneoAttributeCode, createResult.Attribute);
@@ -99,7 +101,7 @@ public class AttributeOptionTests : IClassFixture<TestBase>
             Group = "other",
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Select Attribute Updated" }
         };
-        var attributeUpdateResult = await _fixture.Context.CreateOrUpdateAttributeAsync(attributeUpdated);
+        var attributeUpdateResult = await _fixture.Context.CreateOrUpdateAttributeAsync(attributeUpdated, ct);
         Assert.NotNull(attributeUpdateResult);
         Assert.Equal(OpenAkeneoAttributeCode, attributeUpdateResult.Code);
         Assert.Equal("(OpenAkeneo) Test Select Attribute Updated", attributeUpdateResult.Labels?["en_US"]);
@@ -110,7 +112,7 @@ public class AttributeOptionTests : IClassFixture<TestBase>
             Code = OpenAkeneoTestOptionCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Option Updated" }
         };
-        var updateResult = await _fixture.Context.CreateOrUpdateAttributeOptionAsync(OpenAkeneoAttributeCode, updated);
+        var updateResult = await _fixture.Context.CreateOrUpdateAttributeOptionAsync(OpenAkeneoAttributeCode, updated, ct);
         Assert.NotNull(updateResult);
         Assert.Equal(OpenAkeneoTestOptionCode, updateResult.Code);
         Assert.Equal("(OpenAkeneo) Test Option Updated", updateResult.Labels?["en_US"]);

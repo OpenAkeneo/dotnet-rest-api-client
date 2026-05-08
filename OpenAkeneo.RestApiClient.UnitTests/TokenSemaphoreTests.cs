@@ -12,11 +12,12 @@ public class TokenSemaphoreTests
             FakeHttpHandler.Ok());
 
         var svc = Helpers.BuildService(handler);
+        var ct = TestContext.Current.CancellationToken;
 
         // Fire two concurrent API calls before any token exists in cache
         await Task.WhenAll(
-            svc.HttpGetAsync("/api/rest/v1/products"),
-            svc.HttpGetAsync("/api/rest/v1/categories"));
+            svc.HttpGetAsync("/api/rest/v1/products", ct),
+            svc.HttpGetAsync("/api/rest/v1/categories", ct));
 
         // handler.CallCount = 1 token fetch + 2 API calls = 3 total
         Assert.Equal(3, handler.CallCount);
@@ -31,9 +32,10 @@ public class TokenSemaphoreTests
             FakeHttpHandler.Ok());
 
         var svc = Helpers.BuildService(handler);
+        var ct = TestContext.Current.CancellationToken;
 
-        await svc.HttpGetAsync("/api/rest/v1/products");
-        await svc.HttpGetAsync("/api/rest/v1/categories");
+        await svc.HttpGetAsync("/api/rest/v1/products", ct);
+        await svc.HttpGetAsync("/api/rest/v1/categories", ct);
 
         // Still only 1 token fetch
         Assert.Equal(3, handler.CallCount);

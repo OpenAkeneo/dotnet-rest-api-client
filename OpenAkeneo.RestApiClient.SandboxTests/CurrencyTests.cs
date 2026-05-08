@@ -15,7 +15,7 @@ public class CurrencyTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetCurrencyListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetCurrencyListAsync();
+        var result = await _fixture.Context.GetCurrencyListAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result.Currencies);
@@ -24,7 +24,7 @@ public class CurrencyTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetCurrencyListAsync_WithPageAndLimit_ReturnsCorrectCount()
     {
-        var result = await _fixture.Context.GetCurrencyListAsync(page: 1, limit: 5);
+        var result = await _fixture.Context.GetCurrencyListAsync(page: 1, limit: 5, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.True(result.Currencies.Count <= 5);
@@ -33,7 +33,7 @@ public class CurrencyTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetCurrencyListFullAsync_ReturnsAllCurrencies()
     {
-        var result = await _fixture.Context.GetCurrencyListFullAsync();
+        var result = await _fixture.Context.GetCurrencyListFullAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -43,7 +43,7 @@ public class CurrencyTests : IClassFixture<TestBase>
     public async Task StreamCurrenciesAsync_StreamsCurrencies()
     {
         var count = 0;
-        await foreach (var item in _fixture.Context.StreamCurrenciesAsync())
+        await foreach (var item in _fixture.Context.StreamCurrenciesAsync(ct: TestContext.Current.CancellationToken))
         {
             Assert.NotNull(item);
             count++;
@@ -54,7 +54,7 @@ public class CurrencyTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetCurrencyAsync_ReturnsCurrency()
     {
-        var result = await _fixture.Context.GetCurrencyAsync(CurrencyCode);
+        var result = await _fixture.Context.GetCurrencyAsync(CurrencyCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(CurrencyCode, result.Code);

@@ -9,10 +9,9 @@ namespace OpenAkeneo.RestApiClient
 
         #region Asset family
 
-        /// <summary>Returns a page of asset families, optionally starting after a cursor value.</summary>
-        /// <param name="searchAfter">Cursor value for keyset pagination (use the last code from the previous page).</param>
+        /// <summary>Returns all asset families as a materialised list by following keyset pagination automatically.</summary>
         /// <param name="ct">Cancellation token.</param>
-        /// <returns>An <see cref="AssetFamilyList"/> with HAL navigation links.</returns>
+        /// <returns>A list of all <see cref="AssetFamily"/> objects.</returns>
         public async Task<List<AssetFamily>> GetAssetFamilyListFullAsync(CancellationToken ct = default)
         {
             var list = new List<AssetFamily>();
@@ -37,6 +36,10 @@ namespace OpenAkeneo.RestApiClient
             return Uri.UnescapeDataString(end < 0 ? url[idx..] : url[idx..end]);
         }
 
+        /// <summary>Returns a page of asset families, optionally starting after a cursor value.</summary>
+        /// <param name="searchAfter">Cursor value for keyset pagination (use the last code from the previous page).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>An <see cref="AssetFamilyList"/> with HAL navigation links.</returns>
         public async Task<AssetFamilyList> GetAssetFamilyListAsync(string? searchAfter = null, CancellationToken ct = default)
         {
             var queryParameters = new Dictionary<string, string>();
@@ -47,6 +50,10 @@ namespace OpenAkeneo.RestApiClient
             return await GetAssetFamilyListAsync(queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns an asset family page using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>An <see cref="AssetFamilyList"/> with HAL navigation links.</returns>
         public async Task<AssetFamilyList> GetAssetFamilyListAsync(Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/asset-families";
@@ -58,6 +65,10 @@ namespace OpenAkeneo.RestApiClient
             return new AssetFamilyList { Links = links, AssetFamilies = items };
         }
 
+        /// <summary>Returns a single asset family by its code.</summary>
+        /// <param name="assetFamilyCode">The asset family code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="AssetFamily"/>.</returns>
         public async Task<AssetFamily> GetAssetFamilyAsync(string assetFamilyCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/asset-families/{Uri.EscapeDataString(assetFamilyCode)}";
@@ -67,6 +78,10 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<AssetFamily>(responseString, url);
         }
 
+        /// <summary>Creates or updates an asset family via HTTP PATCH then returns the refreshed entity.</summary>
+        /// <param name="assetFamily">The asset family to create or update. <see cref="AssetFamily.Code"/> must be set.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The updated <see cref="AssetFamily"/> as returned by the API.</returns>
         public async Task<AssetFamily> CreateOrUpdateAssetFamilyAsync(AssetFamily assetFamily, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/asset-families/{Uri.EscapeDataString(assetFamily.Code)}";
@@ -79,6 +94,10 @@ namespace OpenAkeneo.RestApiClient
         #region Asset attribute
 
         // TODO: Asset attribute https://api.akeneo.com/api-reference.html#Assetattribute
+        /// <summary>Returns all attributes for a given asset family.</summary>
+        /// <param name="assetFamilyCode">The asset family code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>An <see cref="AssetAttributeList"/>.</returns>
         public async Task<AssetAttributeList> GetAssetAttributeListAsync(string assetFamilyCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/asset-families/{Uri.EscapeDataString(assetFamilyCode)}/attributes";
@@ -88,6 +107,11 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<AssetAttributeList>(responseString, url);
         }
 
+        /// <summary>Returns a single attribute for an asset family.</summary>
+        /// <param name="assetFamilyCode">The asset family code.</param>
+        /// <param name="assetAttributeCode">The attribute code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="AssetAttribute"/>.</returns>
         public async Task<AssetAttribute> GetAssetAttributeAsync(string assetFamilyCode, string assetAttributeCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/asset-families/{Uri.EscapeDataString(assetFamilyCode)}/attributes/{Uri.EscapeDataString(assetAttributeCode)}";
@@ -97,6 +121,11 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<AssetAttribute>(responseString, url);
         }
 
+        /// <summary>Creates or updates an asset attribute via HTTP PATCH then returns the refreshed entity.</summary>
+        /// <param name="assetFamilyCode">The asset family code.</param>
+        /// <param name="assetAttribute">The attribute to create or update.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The updated <see cref="AssetAttribute"/> as returned by the API.</returns>
         public async Task<AssetAttribute> CreateOrUpdateAssetAttributeAsync(string assetFamilyCode, AssetAttribute assetAttribute, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/asset-families/{Uri.EscapeDataString(assetFamilyCode)}/attributes/{Uri.EscapeDataString(assetAttribute.Code)}";
@@ -108,6 +137,11 @@ namespace OpenAkeneo.RestApiClient
 
         #region Asset attribute option
 
+        /// <summary>Returns all options for a given asset attribute.</summary>
+        /// <param name="assetFamilyCode">The asset family code.</param>
+        /// <param name="assetAttributeCode">The attribute code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>An <see cref="AssetAttributeOptionList"/>.</returns>
         public async Task<AssetAttributeOptionList> GetAssetAttributeOptionListAsync(string assetFamilyCode, string assetAttributeCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/asset-families/{Uri.EscapeDataString(assetFamilyCode)}/attributes/{Uri.EscapeDataString(assetAttributeCode)}/options";
@@ -117,6 +151,12 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<AssetAttributeOptionList>(responseString, url);
         }
 
+        /// <summary>Returns a single option for an asset attribute.</summary>
+        /// <param name="assetFamilyCode">The asset family code.</param>
+        /// <param name="assetAttributeCode">The attribute code.</param>
+        /// <param name="optionCode">The option code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="AssetAttributeOption"/>.</returns>
         public async Task<AssetAttributeOption> GetAssetAttributeOptionAsync(string assetFamilyCode, string assetAttributeCode, string optionCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/asset-families/{Uri.EscapeDataString(assetFamilyCode)}/attributes/{Uri.EscapeDataString(assetAttributeCode)}/options/{Uri.EscapeDataString(optionCode)}";
@@ -126,6 +166,12 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<AssetAttributeOption>(responseString, url);
         }
 
+        /// <summary>Creates or updates an asset attribute option via HTTP PATCH then returns the refreshed entity.</summary>
+        /// <param name="assetFamilyCode">The asset family code.</param>
+        /// <param name="assetAttributeCode">The attribute code.</param>
+        /// <param name="option">The option to create or update.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The updated <see cref="AssetAttributeOption"/> as returned by the API.</returns>
         public async Task<AssetAttributeOption> CreateOrUpdateAssetAttributeOptionAsync(string assetFamilyCode, string assetAttributeCode, AssetAttributeOption option, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/asset-families/{Uri.EscapeDataString(assetFamilyCode)}/attributes/{Uri.EscapeDataString(assetAttributeCode)}/options/{Uri.EscapeDataString(option.Code)}";
@@ -169,6 +215,12 @@ namespace OpenAkeneo.RestApiClient
             }
         }
 
+        /// <summary>Returns all assets in a given family as a materialised list.</summary>
+        /// <param name="assetFamilyCode">The asset family code.</param>
+        /// <param name="search">Optional JSON-encoded search filter.</param>
+        /// <param name="searchAfter">Cursor for keyset pagination.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all <see cref="Asset"/> objects in the family.</returns>
         public async Task<List<Asset>> GetAssetListFullAsync(string assetFamilyCode, string? search = null, string? searchAfter = null, CancellationToken ct = default)
         {
             var list = new List<Asset>();
@@ -177,6 +229,14 @@ namespace OpenAkeneo.RestApiClient
             return list;
         }
 
+        /// <summary>Returns a single page of assets for a given family.</summary>
+        /// <param name="assetFamilyCode">The asset family code.</param>
+        /// <param name="page">1-based page number.</param>
+        /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="search">Optional JSON-encoded search filter.</param>
+        /// <param name="searchAfter">Cursor for keyset pagination.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="AssetList"/> with HAL navigation links.</returns>
         public async Task<AssetList> GetAssetListAsync(string assetFamilyCode, int page = 1, int limit = 100, string? search = null, string? searchAfter = null, CancellationToken ct = default)
         {
             AkeneoContextHelpers.ValidatePagination(page, limit);
@@ -196,6 +256,11 @@ namespace OpenAkeneo.RestApiClient
             return await GetAssetListAsync(assetFamilyCode, queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns an asset page using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="assetFamilyCode">The asset family code.</param>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="AssetList"/> with HAL navigation links.</returns>
         public async Task<AssetList> GetAssetListAsync(string assetFamilyCode, Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/asset-families/{Uri.EscapeDataString(assetFamilyCode)}/assets";
@@ -207,6 +272,11 @@ namespace OpenAkeneo.RestApiClient
             return new AssetList { Links = links, Assets = items };
         }
 
+        /// <summary>Returns a single asset by its code within a given family.</summary>
+        /// <param name="assetFamilyCode">The asset family code.</param>
+        /// <param name="code">The asset code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="Asset"/>.</returns>
         public async Task<Asset> GetAssetAsync(string assetFamilyCode, string code, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/asset-families/{Uri.EscapeDataString(assetFamilyCode)}/assets/{Uri.EscapeDataString(code)}";
@@ -216,6 +286,11 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<Asset>(responseString, url);
         }
 
+        /// <summary>Creates or updates an asset via HTTP PATCH then returns the refreshed entity.</summary>
+        /// <param name="assetFamilyCode">The asset family code.</param>
+        /// <param name="asset">The asset to create or update. <see cref="Asset.Code"/> must be set.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The updated <see cref="Asset"/> as returned by the API.</returns>
         public async Task<Asset> CreateOrUpdateAssetAsync(string assetFamilyCode, Asset asset, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/asset-families/{Uri.EscapeDataString(assetFamilyCode)}/assets/{Uri.EscapeDataString(asset.Code)}";

@@ -80,7 +80,7 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductUuidListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetProductUuidListAsync(limit: 5);
+        var result = await _fixture.Context.GetProductUuidListAsync(limit: 5, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotNull(result.Products);
@@ -89,7 +89,7 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductUuidListFullAsync_ReturnsAllProducts()
     {
-        var result = await _fixture.Context.GetProductUuidListFullAsync();
+        var result = await _fixture.Context.GetProductUuidListFullAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -98,7 +98,7 @@ public class ProductTests : IClassFixture<TestBase>
     public async Task StreamProductUuidsAsync_StreamsProducts()
     {
         var count = 0;
-        await foreach (var item in _fixture.Context.StreamProductUuidsAsync())
+        await foreach (var item in _fixture.Context.StreamProductUuidsAsync(ct: TestContext.Current.CancellationToken))
         {
             Assert.NotNull(item);
             count++;
@@ -109,13 +109,15 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductUuidAsync_ReturnsProduct()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Get a UUID from the list first
-        var listResult = await _fixture.Context.GetProductUuidListAsync(limit: 1);
+        var listResult = await _fixture.Context.GetProductUuidListAsync(limit: 1, ct: ct);
 
         if (listResult.Products.Count > 0)
         {
             var uuid = listResult.Products[0].Uuid;
-            var result = await _fixture.Context.GetProductUuidAsync(uuid);
+            var result = await _fixture.Context.GetProductUuidAsync(uuid, ct);
 
             Assert.NotNull(result);
             Assert.Equal(uuid, result.Uuid);
@@ -129,14 +131,15 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductUuidDraftAsync_ReturnsProductOrNotFound()
     {
-        var listResult = await _fixture.Context.GetProductUuidListAsync(limit: 1);
+        var ct = TestContext.Current.CancellationToken;
+        var listResult = await _fixture.Context.GetProductUuidListAsync(limit: 1, ct: ct);
 
         if (listResult.Products.Count > 0)
         {
             var uuid = listResult.Products[0].Uuid;
             try
             {
-                var result = await _fixture.Context.GetProductUuidDraftAsync(uuid);
+                var result = await _fixture.Context.GetProductUuidDraftAsync(uuid, ct);
                 Assert.NotNull(result);
                 Assert.Equal(uuid, result.Uuid);
             }
@@ -155,7 +158,7 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductIdentifierListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetProductIdentifierListAsync(limit: 5);
+        var result = await _fixture.Context.GetProductIdentifierListAsync(limit: 5, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotNull(result.Products);
@@ -164,7 +167,7 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductIdentifierListFullAsync_ReturnsAllProducts()
     {
-        var result = await _fixture.Context.GetProductIdentifierListFullAsync();
+        var result = await _fixture.Context.GetProductIdentifierListFullAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -173,7 +176,7 @@ public class ProductTests : IClassFixture<TestBase>
     public async Task StreamProductIdentifiersAsync_StreamsProducts()
     {
         var count = 0;
-        await foreach (var item in _fixture.Context.StreamProductIdentifiersAsync())
+        await foreach (var item in _fixture.Context.StreamProductIdentifiersAsync(ct: TestContext.Current.CancellationToken))
         {
             Assert.NotNull(item);
             count++;
@@ -184,13 +187,15 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductIdentifierAsync_ReturnsProduct()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Get an identifier from the list first
-        var listResult = await _fixture.Context.GetProductIdentifierListAsync(limit: 1);
+        var listResult = await _fixture.Context.GetProductIdentifierListAsync(limit: 1, ct: ct);
 
         if (listResult.Products.Count > 0)
         {
             var identifier = listResult.Products[0].Identifier;
-            var result = await _fixture.Context.GetProductIdentifierAsync(identifier);
+            var result = await _fixture.Context.GetProductIdentifierAsync(identifier, ct);
 
             Assert.NotNull(result);
             Assert.Equal(identifier, result.Identifier);
@@ -204,14 +209,15 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductIdentifierDraftAsync_ReturnsProductOrNotFound()
     {
-        var listResult = await _fixture.Context.GetProductIdentifierListAsync(limit: 1);
+        var ct = TestContext.Current.CancellationToken;
+        var listResult = await _fixture.Context.GetProductIdentifierListAsync(limit: 1, ct: ct);
 
         if (listResult.Products.Count > 0)
         {
             var identifier = listResult.Products[0].Identifier;
             try
             {
-                var result = await _fixture.Context.GetProductIdentifierDraftAsync(identifier);
+                var result = await _fixture.Context.GetProductIdentifierDraftAsync(identifier, ct);
                 Assert.NotNull(result);
                 Assert.Equal(identifier, result.Identifier);
             }
@@ -230,7 +236,7 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductModelListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetProductModelListAsync(limit: 5);
+        var result = await _fixture.Context.GetProductModelListAsync(limit: 5, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotNull(result.ProductModels);
@@ -239,7 +245,7 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductModelListFullAsync_ReturnsAllProductModels()
     {
-        var result = await _fixture.Context.GetProductModelListFullAsync();
+        var result = await _fixture.Context.GetProductModelListFullAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -248,7 +254,7 @@ public class ProductTests : IClassFixture<TestBase>
     public async Task StreamProductModelsAsync_StreamsProductModels()
     {
         var count = 0;
-        await foreach (var item in _fixture.Context.StreamProductModelsAsync())
+        await foreach (var item in _fixture.Context.StreamProductModelsAsync(ct: TestContext.Current.CancellationToken))
         {
             Assert.NotNull(item);
             count++;
@@ -259,13 +265,15 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductModelAsync_ReturnsProductModel()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Get a code from the list first
-        var listResult = await _fixture.Context.GetProductModelListAsync(limit: 1);
+        var listResult = await _fixture.Context.GetProductModelListAsync(limit: 1, ct: ct);
 
         if (listResult.ProductModels.Count > 0)
         {
             var code = listResult.ProductModels[0].Code;
-            var result = await _fixture.Context.GetProductModelAsync(code);
+            var result = await _fixture.Context.GetProductModelAsync(code, ct);
 
             Assert.NotNull(result);
             Assert.Equal(code, result.Code);
@@ -279,14 +287,15 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductModelDraftAsync_ReturnsProductModelOrNotFound()
     {
-        var listResult = await _fixture.Context.GetProductModelListAsync(limit: 1);
+        var ct = TestContext.Current.CancellationToken;
+        var listResult = await _fixture.Context.GetProductModelListAsync(limit: 1, ct: ct);
 
         if (listResult.ProductModels.Count > 0)
         {
             var code = listResult.ProductModels[0].Code;
             try
             {
-                var result = await _fixture.Context.GetProductModelDraftAsync(code);
+                var result = await _fixture.Context.GetProductModelDraftAsync(code, ct);
                 Assert.NotNull(result);
                 Assert.Equal(code, result.Code);
             }
@@ -305,7 +314,7 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductMediaFileListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetProductMediaFileListAsync(limit: 5);
+        var result = await _fixture.Context.GetProductMediaFileListAsync(limit: 5, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotNull(result.MediaFiles);
@@ -314,7 +323,7 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductMediaFileListFullAsync_ReturnsAllMediaFiles()
     {
-        var result = await _fixture.Context.GetProductMediaFileListFullAsync();
+        var result = await _fixture.Context.GetProductMediaFileListFullAsync(TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
     }
@@ -323,7 +332,7 @@ public class ProductTests : IClassFixture<TestBase>
     public async Task StreamProductMediaFilesAsync_StreamsMediaFiles()
     {
         var count = 0;
-        await foreach (var item in _fixture.Context.StreamProductMediaFilesAsync())
+        await foreach (var item in _fixture.Context.StreamProductMediaFilesAsync(TestContext.Current.CancellationToken))
         {
             Assert.NotNull(item);
             count++;
@@ -334,13 +343,15 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetProductMediaFileAsync_ReturnsMediaFile()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Get a code from the list first
-        var listResult = await _fixture.Context.GetProductMediaFileListAsync(limit: 1);
+        var listResult = await _fixture.Context.GetProductMediaFileListAsync(limit: 1, ct: ct);
 
         if (listResult.MediaFiles.Count > 0)
         {
             var code = listResult.MediaFiles[0].Code;
-            var result = await _fixture.Context.GetProductMediaFileAsync(code);
+            var result = await _fixture.Context.GetProductMediaFileAsync(code, ct);
 
             Assert.NotNull(result);
             Assert.Equal(code, result.Code);
@@ -354,13 +365,15 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task DownloadProductMediaFileAsync_ReturnsBytes()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Get a code from the list first
-        var listResult = await _fixture.Context.GetProductMediaFileListAsync(limit: 1);
+        var listResult = await _fixture.Context.GetProductMediaFileListAsync(limit: 1, ct: ct);
 
         if (listResult.MediaFiles.Count > 0)
         {
             var code = listResult.MediaFiles[0].Code;
-            var bytes = await _fixture.Context.DownloadProductMediaFileAsync(code);
+            var bytes = await _fixture.Context.DownloadProductMediaFileAsync(code, ct);
 
             Assert.NotNull(bytes);
             Assert.NotEmpty(bytes);
@@ -379,8 +392,10 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task CreateOrUpdateProductModelAsync_Lifecycle_UpdateExistingThenVerify()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Fetch an existing product model to update — avoids needing to know family/variant codes upfront.
-        var listResult = await _fixture.Context.GetProductModelListAsync(limit: 1);
+        var listResult = await _fixture.Context.GetProductModelListAsync(limit: 1, ct: ct);
 
         if (listResult.ProductModels.Count == 0)
         {
@@ -397,7 +412,7 @@ public class ProductTests : IClassFixture<TestBase>
             FamilyVariant = existing.FamilyVariant,
             Categories = existing.Categories
         };
-        var result = await _fixture.Context.CreateOrUpdateProductModelAsync(patch);
+        var result = await _fixture.Context.CreateOrUpdateProductModelAsync(patch, ct);
 
         Assert.NotNull(result);
         Assert.Equal(existing.Code, result.Code);
@@ -407,8 +422,10 @@ public class ProductTests : IClassFixture<TestBase>
     [Fact]
     public async Task CreateOrUpdateProductUuidAsync_Lifecycle_UpdateExistingThenVerify()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Fetch an existing product to update — use a known-good product.
-        var listResult = await _fixture.Context.GetProductUuidListAsync(limit: 1);
+        var listResult = await _fixture.Context.GetProductUuidListAsync(limit: 1, ct: ct);
 
         if (listResult.Products.Count == 0)
         {
@@ -425,7 +442,7 @@ public class ProductTests : IClassFixture<TestBase>
             Family = existing.Family,
             Enabled = existing.Enabled
         };
-        var result = await _fixture.Context.CreateOrUpdateProductUuidAsync(patch);
+        var result = await _fixture.Context.CreateOrUpdateProductUuidAsync(patch, ct);
 
         Assert.NotNull(result);
         Assert.Equal(existing.Uuid, result.Uuid);

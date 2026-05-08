@@ -18,7 +18,7 @@ public class ChannelTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetChannelListAsync_ReturnsList()
     {
-        var result = await _fixture.Context.GetChannelListAsync();
+        var result = await _fixture.Context.GetChannelListAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result.Channels);
@@ -27,7 +27,7 @@ public class ChannelTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetChannelListAsync_WithPageAndLimit_ReturnsCorrectCount()
     {
-        var result = await _fixture.Context.GetChannelListAsync(page: 1, limit: 5);
+        var result = await _fixture.Context.GetChannelListAsync(page: 1, limit: 5, ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.True(result.Channels.Count <= 5);
@@ -36,7 +36,7 @@ public class ChannelTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetChannelListFullAsync_ReturnsAllChannels()
     {
-        var result = await _fixture.Context.GetChannelListFullAsync();
+        var result = await _fixture.Context.GetChannelListFullAsync(ct: TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.NotEmpty(result);
@@ -46,7 +46,7 @@ public class ChannelTests : IClassFixture<TestBase>
     public async Task StreamChannelsAsync_StreamsChannels()
     {
         var count = 0;
-        await foreach (var item in _fixture.Context.StreamChannelsAsync())
+        await foreach (var item in _fixture.Context.StreamChannelsAsync(ct: TestContext.Current.CancellationToken))
         {
             Assert.NotNull(item);
             count++;
@@ -57,7 +57,7 @@ public class ChannelTests : IClassFixture<TestBase>
     [Fact]
     public async Task GetChannelAsync_ReturnsChannel()
     {
-        var result = await _fixture.Context.GetChannelAsync(ChannelCode);
+        var result = await _fixture.Context.GetChannelAsync(ChannelCode, TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.Equal(ChannelCode, result.Code);
@@ -71,6 +71,8 @@ public class ChannelTests : IClassFixture<TestBase>
     [Fact]
     public async Task CreateOrUpdateChannelAsync_Lifecycle_CreateThenUpdateThenVerify()
     {
+        var ct = TestContext.Current.CancellationToken;
+
         // Step 1 — Create the channel with a known category tree and locale.
         var created = new Channel
         {
@@ -80,7 +82,7 @@ public class ChannelTests : IClassFixture<TestBase>
             CategoryTree = "master",
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Channel" }
         };
-        var createResult = await _fixture.Context.CreateOrUpdateChannelAsync(created);
+        var createResult = await _fixture.Context.CreateOrUpdateChannelAsync(created, ct);
 
         Assert.NotNull(createResult);
         Assert.Equal(OpenAkeneoTestChannelCode, createResult.Code);
@@ -93,7 +95,7 @@ public class ChannelTests : IClassFixture<TestBase>
             Code = OpenAkeneoTestChannelCode,
             Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Channel Updated" }
         };
-        var updateResult = await _fixture.Context.CreateOrUpdateChannelAsync(updated);
+        var updateResult = await _fixture.Context.CreateOrUpdateChannelAsync(updated, ct);
 
         Assert.NotNull(updateResult);
         Assert.Equal(OpenAkeneoTestChannelCode, updateResult.Code);

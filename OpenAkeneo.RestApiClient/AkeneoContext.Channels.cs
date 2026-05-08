@@ -9,6 +9,9 @@ namespace OpenAkeneo.RestApiClient
 
         #region Channel
 
+        /// <summary>Streams all channels, following HAL pagination automatically.</summary>
+        /// <param name="withCount">Include total item count in API response.</param>
+        /// <param name="ct">Cancellation token.</param>
         public async IAsyncEnumerable<Channel> StreamChannelsAsync(bool withCount = false, [EnumeratorCancellation] CancellationToken ct = default)
         {
             for (int page = 1; ; page++)
@@ -22,6 +25,10 @@ namespace OpenAkeneo.RestApiClient
             }
         }
 
+        /// <summary>Returns all channels as a materialised list.</summary>
+        /// <param name="withCount">Include total item count in API response.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all <see cref="Channel"/> objects.</returns>
         public async Task<List<Channel>> GetChannelListFullAsync(bool withCount = false, CancellationToken ct = default)
         {
             var list = new List<Channel>();
@@ -30,6 +37,12 @@ namespace OpenAkeneo.RestApiClient
             return list;
         }
 
+        /// <summary>Returns a single page of channels.</summary>
+        /// <param name="page">1-based page number.</param>
+        /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="withCount">Include total item count in API response.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="ChannelList"/> with HAL navigation links.</returns>
         public async Task<ChannelList> GetChannelListAsync(int page = 1, int limit = 100, bool withCount = false, CancellationToken ct = default)
         {
             AkeneoContextHelpers.ValidatePagination(page, limit);
@@ -43,6 +56,10 @@ namespace OpenAkeneo.RestApiClient
             return await GetChannelListAsync(queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns a channel page using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="ChannelList"/> with HAL navigation links.</returns>
         public async Task<ChannelList> GetChannelListAsync(Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/channels";
@@ -54,6 +71,10 @@ namespace OpenAkeneo.RestApiClient
             return new ChannelList { Links = links, Channels = items };
         }
 
+        /// <summary>Returns a single channel by its code.</summary>
+        /// <param name="channelCode">The channel code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="Channel"/>.</returns>
         public async Task<Channel> GetChannelAsync(string channelCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/channels/{Uri.EscapeDataString(channelCode)}";
@@ -63,6 +84,10 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<Channel>(responseString, url);
         }
 
+        /// <summary>Creates or updates a channel via HTTP PATCH then returns the refreshed entity.</summary>
+        /// <param name="channel">The channel to create or update. <see cref="Channel.Code"/> must be set.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The updated <see cref="Channel"/> as returned by the API.</returns>
         public async Task<Channel> CreateOrUpdateChannelAsync(Channel channel, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/channels/{Uri.EscapeDataString(channel.Code)}";
@@ -75,6 +100,9 @@ namespace OpenAkeneo.RestApiClient
 
         #region Locale
 
+        /// <summary>Streams all locales, following HAL pagination automatically.</summary>
+        /// <param name="withCount">Include total item count in API response.</param>
+        /// <param name="ct">Cancellation token.</param>
         public async IAsyncEnumerable<Locale> StreamLocalesAsync(bool withCount = false, [EnumeratorCancellation] CancellationToken ct = default)
         {
             for (int page = 1; ; page++)
@@ -88,6 +116,10 @@ namespace OpenAkeneo.RestApiClient
             }
         }
 
+        /// <summary>Returns all locales as a materialised list.</summary>
+        /// <param name="withCount">Include total item count in API response.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all <see cref="Locale"/> objects.</returns>
         public async Task<List<Locale>> GetLocaleListFullAsync(bool withCount = false, CancellationToken ct = default)
         {
             var list = new List<Locale>();
@@ -96,6 +128,12 @@ namespace OpenAkeneo.RestApiClient
             return list;
         }
 
+        /// <summary>Returns a single page of locales.</summary>
+        /// <param name="page">1-based page number.</param>
+        /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="withCount">Include total item count in API response.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="LocaleList"/> with HAL navigation links.</returns>
         public async Task<LocaleList> GetLocaleListAsync(int page = 1, int limit = 100, bool withCount = false, CancellationToken ct = default)
         {
             AkeneoContextHelpers.ValidatePagination(page, limit);
@@ -109,6 +147,10 @@ namespace OpenAkeneo.RestApiClient
             return await GetLocaleListAsync(queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns a locale page using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="LocaleList"/> with HAL navigation links.</returns>
         public async Task<LocaleList> GetLocaleListAsync(Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/locales";
@@ -120,6 +162,10 @@ namespace OpenAkeneo.RestApiClient
             return new LocaleList { Links = links, Locales = items };
         }
 
+        /// <summary>Returns a single locale by its code.</summary>
+        /// <param name="localeCode">The locale code (e.g. <c>en_US</c>).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="Locale"/>.</returns>
         public async Task<Locale> GetLocaleAsync(string localeCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/locales/{Uri.EscapeDataString(localeCode)}";
@@ -133,6 +179,9 @@ namespace OpenAkeneo.RestApiClient
 
         #region Currency
 
+        /// <summary>Streams all currencies, following HAL pagination automatically.</summary>
+        /// <param name="withCount">Include total item count in API response.</param>
+        /// <param name="ct">Cancellation token.</param>
         public async IAsyncEnumerable<Currency> StreamCurrenciesAsync(bool withCount = false, [EnumeratorCancellation] CancellationToken ct = default)
         {
             for (int page = 1; ; page++)
@@ -146,6 +195,10 @@ namespace OpenAkeneo.RestApiClient
             }
         }
 
+        /// <summary>Returns all currencies as a materialised list.</summary>
+        /// <param name="withCount">Include total item count in API response.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all <see cref="Currency"/> objects.</returns>
         public async Task<List<Currency>> GetCurrencyListFullAsync(bool withCount = false, CancellationToken ct = default)
         {
             var list = new List<Currency>();
@@ -154,6 +207,12 @@ namespace OpenAkeneo.RestApiClient
             return list;
         }
 
+        /// <summary>Returns a single page of currencies.</summary>
+        /// <param name="page">1-based page number.</param>
+        /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="withCount">Include total item count in API response.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="CurrencyList"/> with HAL navigation links.</returns>
         public async Task<CurrencyList> GetCurrencyListAsync(int page = 1, int limit = 100, bool withCount = false, CancellationToken ct = default)
         {
             AkeneoContextHelpers.ValidatePagination(page, limit);
@@ -167,6 +226,10 @@ namespace OpenAkeneo.RestApiClient
             return await GetCurrencyListAsync(queryParameters, ct).ConfigureAwait(false);
         }
 
+        /// <summary>Returns a currency page using an arbitrary set of pre-built query parameters.</summary>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="CurrencyList"/> with HAL navigation links.</returns>
         public async Task<CurrencyList> GetCurrencyListAsync(Dictionary<string, string> queryParameters, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/currencies";
@@ -178,6 +241,10 @@ namespace OpenAkeneo.RestApiClient
             return new CurrencyList { Links = links, Currencies = items };
         }
 
+        /// <summary>Returns a single currency by its code.</summary>
+        /// <param name="currencyCode">The ISO 4217 currency code (e.g. <c>EUR</c>).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The matching <see cref="Currency"/>.</returns>
         public async Task<Currency> GetCurrencyAsync(string currencyCode, CancellationToken ct = default)
         {
             var url = $"/api/rest/v1/currencies/{Uri.EscapeDataString(currencyCode)}";
