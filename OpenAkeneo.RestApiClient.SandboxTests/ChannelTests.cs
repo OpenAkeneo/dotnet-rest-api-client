@@ -61,7 +61,9 @@ public class ChannelTests : IClassFixture<TestBase>
 
         Assert.NotNull(result);
         Assert.Equal(ChannelCode, result.Code);
+        Assert.NotNull(result.Locales);
         Assert.NotEmpty(result.Locales);
+        Assert.NotNull(result.Currencies);
         Assert.NotEmpty(result.Currencies);
     }
 
@@ -86,6 +88,7 @@ public class ChannelTests : IClassFixture<TestBase>
 
         Assert.NotNull(createResult);
         Assert.Equal(OpenAkeneoTestChannelCode, createResult.Code);
+        Assert.NotNull(createResult.Locales);
         Assert.Contains("en_US", createResult.Locales);
         Assert.Equal("(OpenAkeneo) Test Channel", createResult.Labels?["en_US"]);
 

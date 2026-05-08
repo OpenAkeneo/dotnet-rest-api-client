@@ -65,6 +65,7 @@ public class FamilyTests : IClassFixture<TestBase>
 
         Assert.NotNull(result);
         Assert.Equal(FamilyCode, result.Code);
+        Assert.NotNull(result.Attributes);
         Assert.NotEmpty(result.Attributes);
     }
 

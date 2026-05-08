@@ -117,6 +117,7 @@ public class ProductTests : IClassFixture<TestBase>
         if (listResult.Products.Count > 0)
         {
             var uuid = listResult.Products[0].Uuid;
+            Assert.NotNull(uuid);
             var result = await _fixture.Context.GetProductUuidAsync(uuid, ct);
 
             Assert.NotNull(result);
@@ -137,6 +138,7 @@ public class ProductTests : IClassFixture<TestBase>
         if (listResult.Products.Count > 0)
         {
             var uuid = listResult.Products[0].Uuid;
+            Assert.NotNull(uuid);
             try
             {
                 var result = await _fixture.Context.GetProductUuidDraftAsync(uuid, ct);

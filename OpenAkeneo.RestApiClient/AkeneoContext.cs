@@ -41,8 +41,11 @@ namespace OpenAkeneo.RestApiClient
         /// <summary>Exposes the underlying low-level service for advanced token and HTTP operations.</summary>
         public IAkeneoRestApiService Service => _service;
 
+        /// <summary>Identifies this connection (mapped from the API credentials id or username).</summary>
         public string ConnectionId => _service.ConnectionId;
+        /// <summary>Human-readable name for this connection (mapped from the API credentials name or REST API URL).</summary>
         public string ConnectionName => _service.ConnectionName;
+        /// <summary>Base REST API URL for this connection.</summary>
         public string ConnectionUrl => _service.ConnectionUrl;
 
         /// <summary>

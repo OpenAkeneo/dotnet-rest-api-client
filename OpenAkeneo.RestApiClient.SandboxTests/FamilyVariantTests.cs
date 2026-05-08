@@ -55,6 +55,7 @@ public class FamilyVariantTests : IClassFixture<TestBase>
 
         Assert.NotNull(result);
         Assert.Equal(VariantCode, result.Code);
+        Assert.NotNull(result.VariantAttributeSets);
         Assert.NotEmpty(result.VariantAttributeSets);
     }
 

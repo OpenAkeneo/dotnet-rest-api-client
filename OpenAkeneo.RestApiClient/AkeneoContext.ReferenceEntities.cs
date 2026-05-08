@@ -9,10 +9,9 @@ namespace OpenAkeneo.RestApiClient
 
         #region Reference entity
 
-        /// <summary>Returns a page of reference entities, optionally starting after a cursor value.</summary>
-        /// <param name="searchAfter">Cursor value for keyset pagination (use the last code from the previous page).</param>
+        /// <summary>Returns all reference entities as a materialised list by following keyset pagination automatically.</summary>
         /// <param name="ct">Cancellation token.</param>
-        /// <returns>A <see cref="ReferenceEntityList"/> with HAL navigation links.</returns>
+        /// <returns>A list of all <see cref="ReferenceEntity"/> objects.</returns>
         public async Task<List<ReferenceEntity>> GetReferenceEntityListFullAsync(CancellationToken ct = default)
         {
             var list = new List<ReferenceEntity>();

@@ -93,6 +93,7 @@ public class AkeneoE2ETests : IClassFixture<TestBase>
         };
         var familyResult = await _fixture.Context.CreateOrUpdateFamilyAsync(family, ct);
         Assert.NotNull(familyResult);
+        Assert.NotNull(familyResult.Attributes);
         Assert.Contains(OpenAkeneoTestAttributeCode, familyResult.Attributes);
 
         // 7. Create product linking to the family, category, and using the attribute
@@ -113,6 +114,7 @@ public class AkeneoE2ETests : IClassFixture<TestBase>
         var productResult = await _fixture.Context.CreateOrUpdateProductIdentifierAsync(product, ct);
         Assert.NotNull(productResult);
         Assert.Equal(OpenAkeneoTestFamilyCode, productResult.Family);
+        Assert.NotNull(productResult.Categories);
         Assert.Contains(OpenAkeneoTestCategoryCode, productResult.Categories);
         Assert.NotNull(productResult.Values);
         Assert.True(productResult.Values.ContainsKey(OpenAkeneoTestAttributeCode));

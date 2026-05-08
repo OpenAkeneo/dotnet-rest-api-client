@@ -323,6 +323,7 @@ namespace OpenAkeneo.RestApiClient.Models
     /// <summary>A HAL href wrapper.</summary>
     public class AssetHref
     {
+        /// <summary>The URL.</summary>
         [JsonPropertyName("href")]
         public string? Href { get; set; }
     }
@@ -331,18 +332,23 @@ namespace OpenAkeneo.RestApiClient.Models
     public class AssetMediaFileLinkedData
     {
 
+        /// <summary>File size in bytes.</summary>
         [JsonPropertyName("size")]
         public long? Size { get; set; }
 
+        /// <summary>MIME type of the file (e.g. image/png).</summary>
         [JsonPropertyName("mime_type")]
         public string? MimeType { get; set; }
 
+        /// <summary>File extension (e.g. png).</summary>
         [JsonPropertyName("extension")]
         public string? Extension { get; set; }
 
+        /// <summary>Original filename as uploaded.</summary>
         [JsonPropertyName("original_filename")]
         public string? OriginalFilename { get; set; }
 
+        /// <summary>ISO 8601 timestamp of the last update.</summary>
         [JsonPropertyName("updated_at")]
         public string? UpdatedAt { get; set; }
 

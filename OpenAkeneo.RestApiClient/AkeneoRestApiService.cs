@@ -114,8 +114,11 @@ namespace OpenAkeneo.RestApiClient
 
         #region Connection
 
+        /// <summary>Identifies this connection (mapped from the API credentials id or username).</summary>
         public string ConnectionId => _settings.Id ?? _settings.Username;
+        /// <summary>Human-readable name for this connection (mapped from the API credentials name or REST API URL).</summary>
         public string ConnectionName => _settings.Name ?? _settings.RestApiUrl;
+        /// <summary>Base REST API URL for this connection.</summary>
         public string ConnectionUrl => _settings.RestApiUrl;
 
         #endregion

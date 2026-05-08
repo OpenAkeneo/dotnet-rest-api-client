@@ -58,7 +58,9 @@ public class AttributeTests : IClassFixture<TestBase>
 
         Assert.NotNull(result);
         Assert.Equal(AttributeCode, result.Code);
+        Assert.NotNull(result.Type);
         Assert.NotEmpty(result.Type);
+        Assert.NotNull(result.Group);
         Assert.NotEmpty(result.Group);
     }
 }

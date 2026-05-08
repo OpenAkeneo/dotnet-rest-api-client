@@ -52,6 +52,7 @@ public class AttributeGroupTests : IClassFixture<TestBase>
 
         Assert.NotNull(result);
         Assert.Equal(AttributeGroupCode, result.Code);
+        Assert.NotNull(result.Attributes);
         Assert.NotEmpty(result.Attributes);
     }
 

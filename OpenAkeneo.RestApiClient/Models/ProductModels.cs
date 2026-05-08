@@ -249,6 +249,7 @@ namespace OpenAkeneo.RestApiClient.Models
     /// </summary>
     public class AssetCollectionLinkedDataEntry
     {
+        /// <summary>Share links for each attribute/scope/locale combination of this asset.</summary>
         [JsonPropertyName("share_links")]
         public List<AssetCollectionShareLink>? ShareLinks { get; set; }
     }
@@ -261,9 +262,11 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonPropertyName("attribute")]
         public string? Attribute { get; set; }
 
+        /// <summary>Channel scope this share link applies to, or null for non-scopable.</summary>
         [JsonPropertyName("scope")]
         public string? Scope { get; set; }
 
+        /// <summary>Locale this share link applies to, or null for non-localisable.</summary>
         [JsonPropertyName("locale")]
         public string? Locale { get; set; }
 
@@ -284,6 +287,7 @@ namespace OpenAkeneo.RestApiClient.Models
     /// <summary>A HAL href wrapper.</summary>
     public class AssetCollectionHref
     {
+        /// <summary>The URL.</summary>
         [JsonPropertyName("href")]
         public string? Href { get; set; }
     }
