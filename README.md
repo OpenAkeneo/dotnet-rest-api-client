@@ -1,5 +1,10 @@
 # OpenAkeneo.RestApiClient
 
+[![NuGet](https://img.shields.io/nuget/v/OpenAkeneo.RestApiClient)](https://www.nuget.org/packages/OpenAkeneo.RestApiClient)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/OpenAkeneo.RestApiClient)](https://www.nuget.org/packages/OpenAkeneo.RestApiClient)
+[![Build](https://github.com/OpenAkeneo/dotnet-rest-api-client/actions/workflows/ci.yml/badge.svg)](https://github.com/OpenAkeneo/dotnet-rest-api-client/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/OpenAkeneo/dotnet-rest-api-client/blob/main/LICENSE)
+
 Unofficial .NET client library for the [Akeneo PIM](https://www.akeneo.com/) REST API — typed models, automatic OAuth token management, streaming pagination, and Polly-based retry handling.
 
 - **Note:** This project is currently in development, APIs may change between minor versions until 1.0. Use at your own risk!
