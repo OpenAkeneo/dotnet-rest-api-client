@@ -108,6 +108,70 @@ namespace OpenAkeneo.RestApiClient
             return result;
         }
 
+        /// <summary>Streams all product UUIDs belonging to a catalog, following HAL pagination automatically.</summary>
+        /// <param name="catalogId">The catalog UUID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>An async stream of product UUID strings.</returns>
+        public async IAsyncEnumerable<string> StreamCatalogProductUuidsAsync(string catalogId, [EnumeratorCancellation] CancellationToken ct = default)
+        {
+            int page = 1;
+            while (true)
+            {
+                var partial = await GetCatalogProductUuidListAsync(catalogId, page, 100, ct).ConfigureAwait(false);
+                if (partial.Uuids == null || partial.Uuids.Count == 0)
+                    yield break;
+                foreach (var uuid in partial.Uuids)
+                    yield return uuid;
+                if (partial.Links?.Next == null)
+                    yield break;
+                page++;
+            }
+        }
+
+        /// <summary>Returns all product UUIDs belonging to a catalog as a materialised list.</summary>
+        /// <param name="catalogId">The catalog UUID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all product UUID strings.</returns>
+        public async Task<List<string>> GetCatalogProductUuidListFullAsync(string catalogId, CancellationToken ct = default)
+        {
+            var list = new List<string>();
+            await foreach (var uuid in StreamCatalogProductUuidsAsync(catalogId, ct))
+                list.Add(uuid);
+            return list;
+        }
+
+        /// <summary>Streams all full product objects belonging to a catalog, following HAL pagination automatically.</summary>
+        /// <param name="catalogId">The catalog UUID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>An async stream of <see cref="ProductUuid"/> objects.</returns>
+        public async IAsyncEnumerable<ProductUuid> StreamCatalogProductsAsync(string catalogId, [EnumeratorCancellation] CancellationToken ct = default)
+        {
+            int page = 1;
+            while (true)
+            {
+                var partial = await GetCatalogProductListAsync(catalogId, page, 100, ct).ConfigureAwait(false);
+                if (partial.Products == null || partial.Products.Count == 0)
+                    yield break;
+                foreach (var product in partial.Products)
+                    yield return product;
+                if (partial.Links?.Next == null)
+                    yield break;
+                page++;
+            }
+        }
+
+        /// <summary>Returns all full product objects belonging to a catalog as a materialised list.</summary>
+        /// <param name="catalogId">The catalog UUID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all <see cref="ProductUuid"/> objects.</returns>
+        public async Task<List<ProductUuid>> GetCatalogProductListFullAsync(string catalogId, CancellationToken ct = default)
+        {
+            var list = new List<ProductUuid>();
+            await foreach (var product in StreamCatalogProductsAsync(catalogId, ct))
+                list.Add(product);
+            return list;
+        }
+
         /// <summary>Returns a single catalog product by its UUID.</summary>
         /// <param name="catalogId">The catalog UUID.</param>
         /// <param name="uuid">The product UUID.</param>

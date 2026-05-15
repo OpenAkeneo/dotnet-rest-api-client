@@ -182,6 +182,56 @@ namespace OpenAkeneo.RestApiClient
 
         #region Reference entity record
 
+        /// <summary>Streams all records for a given reference entity, following keyset pagination automatically.</summary>
+        /// <param name="referenceEntityCode">The reference entity code.</param>
+        /// <param name="search">Optional JSON-encoded search filter.</param>
+        /// <param name="channel">Optional channel scope.</param>
+        /// <param name="locales">Optional comma-separated locale codes.</param>
+        /// <param name="searchAfter">Optional cursor to resume streaming from a known position.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>An async stream of <see cref="ReferenceEntityRecord"/> objects.</returns>
+        public async IAsyncEnumerable<ReferenceEntityRecord> StreamReferenceEntityRecordsAsync(
+            string referenceEntityCode,
+            string? search = null,
+            string? channel = null,
+            string? locales = null,
+            string? searchAfter = null,
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+        {
+            string? cursor = searchAfter;
+            do
+            {
+                var page = await GetReferenceEntityRecordListAsync(referenceEntityCode, search, channel, locales, cursor, ct).ConfigureAwait(false);
+                foreach (var record in page.ReferenceEntityRecords)
+                    yield return record;
+                cursor = page.Links?.Next?.Href is not null
+                    ? ExtractSearchAfter(page.Links.Next.Href)
+                    : null;
+            } while (cursor is not null);
+        }
+
+        /// <summary>Returns all records for a given reference entity as a materialised list by following keyset pagination automatically.</summary>
+        /// <param name="referenceEntityCode">The reference entity code.</param>
+        /// <param name="search">Optional JSON-encoded search filter.</param>
+        /// <param name="channel">Optional channel scope.</param>
+        /// <param name="locales">Optional comma-separated locale codes.</param>
+        /// <param name="searchAfter">Optional cursor to start from a known position.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all <see cref="ReferenceEntityRecord"/> objects.</returns>
+        public async Task<List<ReferenceEntityRecord>> GetReferenceEntityRecordListFullAsync(
+            string referenceEntityCode,
+            string? search = null,
+            string? channel = null,
+            string? locales = null,
+            string? searchAfter = null,
+            CancellationToken ct = default)
+        {
+            var list = new List<ReferenceEntityRecord>();
+            await foreach (var record in StreamReferenceEntityRecordsAsync(referenceEntityCode, search, channel, locales, searchAfter, ct: ct))
+                list.Add(record);
+            return list;
+        }
+
         /// <summary>Returns a page of records for a given reference entity.</summary>
         /// <param name="referenceEntityCode">The reference entity code.</param>
         /// <param name="search">Optional JSON-encoded search filter.</param>

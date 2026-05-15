@@ -309,7 +309,19 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonPropertyName("scope")]
         public string? Scope { get; set; }
 
-        /// <summary>The raw attribute value; shape depends on the attribute type.</summary>
+        /// <summary>
+        /// The raw attribute value. Runtime type depends on the Akeneo attribute type:
+        /// <list type="bullet">
+        ///   <item><description><c>pim_catalog_text</c>, <c>pim_catalog_textarea</c>, <c>pim_catalog_identifier</c>, <c>pim_catalog_date</c>, <c>pim_catalog_file</c>, <c>pim_catalog_image</c>, <c>pim_catalog_simpleselect</c> — <see cref="string"/></description></item>
+        ///   <item><description><c>pim_catalog_number</c> — <see cref="long"/>, <see cref="double"/>, or <see cref="decimal"/> depending on the value</description></item>
+        ///   <item><description><c>pim_catalog_boolean</c> — <see cref="bool"/></description></item>
+        ///   <item><description><c>pim_catalog_multiselect</c>, <c>pim_catalog_asset_collection</c> — <see cref="System.Collections.Generic.List{T}"/> of <see cref="string"/></description></item>
+        ///   <item><description><c>pim_catalog_price_collection</c> — <see cref="System.Collections.Generic.List{T}"/> of <see cref="System.Collections.Generic.Dictionary{TKey,TValue}"/> with <c>amount</c> and <c>currency</c> keys</description></item>
+        ///   <item><description><c>pim_catalog_metric</c> — deserializes to <see cref="MetricValue"/> via <c>GetData&lt;MetricValue&gt;()</c></description></item>
+        ///   <item><description><c>pim_reference_data_simpleselect</c>, <c>pim_reference_data_multiselect</c> — <see cref="string"/> or <see cref="System.Collections.Generic.List{T}"/> of <see cref="string"/></description></item>
+        /// </list>
+        /// Use <see cref="GetData{T}"/> to deserialize into a typed model.
+        /// </summary>
         [JsonPropertyName("data")]
         [JsonConverter(typeof(PolymorphicDataConverter))]
         public object? Data { get; set; }
@@ -399,6 +411,26 @@ namespace OpenAkeneo.RestApiClient.Models
         /// <summary>Completeness percentage (0–100).</summary>
         [JsonPropertyName("data")]
         public int Data { get; set; }
+
+    }
+
+    #endregion
+
+
+    #region Metric value
+
+    /// <summary>A typed representation of a <c>pim_catalog_metric</c> attribute value.</summary>
+    /// <remarks>Use <c>GetData&lt;MetricValue&gt;()</c> on <see cref="ProductValue"/> or <see cref="ReferenceEntityRecordValue"/> to obtain this type.</remarks>
+    public class MetricValue
+    {
+
+        /// <summary>The numeric amount as a string (e.g. <c>"12.5"</c>).</summary>
+        [JsonPropertyName("amount")]
+        public string? Amount { get; set; }
+
+        /// <summary>The unit code within its measurement family (e.g. <c>"KILOGRAM"</c>).</summary>
+        [JsonPropertyName("unit")]
+        public string? Unit { get; set; }
 
     }
 

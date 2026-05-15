@@ -80,6 +80,36 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<ApiOverview>(responseString, url);
         }
 
+        /// <summary>Streams all UI extensions registered in Akeneo, following HAL pagination automatically.</summary>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>An async stream of <see cref="Extension"/> objects.</returns>
+        public async IAsyncEnumerable<Extension> StreamExtensionsAsync([EnumeratorCancellation] CancellationToken ct = default)
+        {
+            int page = 1;
+            while (true)
+            {
+                var partial = await GetExtensionListAsync(page, 100, ct).ConfigureAwait(false);
+                if (partial.Extensions == null || partial.Extensions.Count == 0)
+                    yield break;
+                foreach (var ext in partial.Extensions)
+                    yield return ext;
+                if (partial.Links?.Next == null)
+                    yield break;
+                page++;
+            }
+        }
+
+        /// <summary>Returns all UI extensions registered in Akeneo as a materialised list.</summary>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A list of all <see cref="Extension"/> objects.</returns>
+        public async Task<List<Extension>> GetExtensionListFullAsync(CancellationToken ct = default)
+        {
+            var list = new List<Extension>();
+            await foreach (var ext in StreamExtensionsAsync(ct))
+                list.Add(ext);
+            return list;
+        }
+
         /// <summary>Returns a page of UI extensions registered in Akeneo.</summary>
         /// <param name="page">1-based page number.</param>
         /// <param name="limit">Items per page (1–100).</param>

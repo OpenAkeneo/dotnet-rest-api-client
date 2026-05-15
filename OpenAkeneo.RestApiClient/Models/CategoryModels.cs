@@ -78,10 +78,26 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonPropertyName("attribute_code")]
         public string? AttributeCode { get; set; }
 
-        /// <summary>The raw attribute value; shape depends on the attribute type.</summary>
+        /// <summary>
+        /// The raw attribute value. Runtime type depends on the category attribute type:
+        /// <list type="bullet">
+        ///   <item><description><c>text</c>, <c>textarea</c>, <c>image</c>, <c>file</c>, <c>single_link</c>, <c>date</c> — <see cref="string"/></description></item>
+        ///   <item><description><c>number</c> — <see cref="long"/>, <see cref="double"/>, or <see cref="decimal"/> depending on the value</description></item>
+        ///   <item><description><c>checkbox</c> (boolean) — <see cref="bool"/></description></item>
+        ///   <item><description><c>multi_link</c> — <see cref="System.Collections.Generic.List{T}"/> of <see cref="string"/></description></item>
+        /// </list>
+        /// Use <c>value.GetData&lt;T&gt;()</c> if you need type-safe deserialization.
+        /// </summary>
         [JsonPropertyName("data")]
         [JsonConverter(typeof(PolymorphicDataConverter))]
         public object? Data { get; set; }
+
+        /// <summary>Deserializes <see cref="Data"/> into the specified type.</summary>
+        public T? GetData<T>()
+        {
+            if (Data == null) return default;
+            return System.Text.Json.JsonSerializer.Deserialize<T>(System.Text.Json.JsonSerializer.Serialize(Data));
+        }
 
     }
 

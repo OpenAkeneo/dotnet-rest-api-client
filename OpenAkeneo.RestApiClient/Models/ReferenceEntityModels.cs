@@ -200,7 +200,17 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonPropertyName("channel")]
         public string? Channel { get; set; }
 
-        /// <summary>The raw attribute value; shape depends on the attribute type.</summary>
+        /// <summary>
+        /// The raw attribute value. Runtime type depends on the reference entity attribute type:
+        /// <list type="bullet">
+        ///   <item><description><c>text</c>, <c>single_option</c>, <c>image</c> — <see cref="string"/></description></item>
+        ///   <item><description><c>multiple_options</c> — <see cref="System.Collections.Generic.List{T}"/> of <see cref="string"/></description></item>
+        ///   <item><description><c>number</c> — <see cref="long"/>, <see cref="double"/>, or <see cref="decimal"/> depending on the value</description></item>
+        ///   <item><description><c>yes_no</c> (boolean) — <see cref="bool"/></description></item>
+        ///   <item><description><c>record</c>, <c>record_collection</c> — <see cref="string"/> or <see cref="System.Collections.Generic.List{T}"/> of <see cref="string"/> (record codes)</description></item>
+        /// </list>
+        /// Use <see cref="GetData{T}"/> to deserialize into a typed model, e.g. <c>GetData&lt;MetricValue&gt;()</c> for metric values.
+        /// </summary>
         [JsonPropertyName("data")]
         [JsonConverter(typeof(PolymorphicDataConverter))]
         public object? Data { get; set; }
