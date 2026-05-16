@@ -122,6 +122,11 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? MaxFileSize { get; set; }
 
+        /// <summary>Code of the reference entity this attribute links to. Only present for <c>reference_entity_single_link</c> and <c>reference_entity_multiple_links</c> attribute types.</summary>
+        [JsonPropertyName("reference_entity_code")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? ReferenceEntityCode { get; set; }
+
     }
 
     #endregion

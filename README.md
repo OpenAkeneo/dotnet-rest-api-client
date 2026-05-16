@@ -7,9 +7,11 @@
 
 Unofficial .NET client library for the [Akeneo PIM](https://www.akeneo.com/) REST API — typed models, automatic OAuth token management, streaming pagination, and Polly-based retry handling.
 
-- **Note:** This project is currently in development, APIs may change between minor versions until 1.0. Use at your own risk!
-- **Note:** Akeneo is a registered trademark of Akeneo SA. This project is not affiliated with Akeneo SA. 
-- **Note:** This project was developed with assistance from AI tools. Please consider this fact against your AI governance policy before using this library.
+> Note: This project is currently in development, APIs may change between minor versions until 1.0. Use at your own risk!
+
+> Note: Akeneo is a registered trademark of Akeneo SA. This project is not affiliated with Akeneo SA.
+
+> Note: This project was developed with assistance from AI tools. Please consider this fact against your AI governance policy before using this library.
 
 ---
 
@@ -85,6 +87,8 @@ Copy `appsettings.example.json` to `appsettings.json` and fill in your credentia
 
 `TokenFilePath` is optional. When set (e.g. `"akeneo_token.{0}.json"`), the OAuth token is cached to disk and reused across restarts. Leave empty to cache in memory only.
 
+> **Security note:** `TokenFilePath` should point to a directory with restrictive ACLs. Never place it on a shared filesystem or in a web-accessible path.
+
 ---
 
 ## Architecture
@@ -98,6 +102,43 @@ For most use cases, only `AkeneoContext` is needed.
 
 ---
 
+## Dependency Injection (ASP.NET Core / hosted services)
+
+For long-running applications, use `AddAkeneoClient` so `IHttpClientFactory` manages handler rotation, preventing stale-DNS and socket exhaustion:
+
+```csharp
+// Program.cs
+var settings = builder.Configuration.GetSection("AkeneoSettings").Get<AkeneoRestApiSettings>();
+
+builder.Services.AddAkeneoClient(settings);
+```
+
+Then inject `AkeneoContext` into your services:
+
+```csharp
+public class ProductSyncService
+{
+    private readonly AkeneoContext _akeneo;
+
+    public ProductSyncService(AkeneoContext akeneo)
+    {
+        _akeneo = akeneo;
+    }
+
+    public async Task SyncAsync(CancellationToken ct)
+    {
+        await foreach (var product in _akeneo.StreamProductUuidsAsync(ct: ct))
+        {
+            // process product
+        }
+    }
+}
+```
+
+For scripts and console apps where DI is not used, `new AkeneoContext(settings)` is the simpler option.
+
+---
+
 ## Usage
 
 ### Token Management
@@ -105,8 +146,8 @@ For most use cases, only `AkeneoContext` is needed.
 Tokens are acquired automatically on the first call. Explicit control is also available:
 
 ```csharp
-var token = await apiService.GetTokenAsync();
-var freshToken = await apiService.GetTokenAsync(forceRefresh: true);
+var token = await context.Service.GetTokenAsync();
+var freshToken = await context.Service.GetTokenAsync(forceRefresh: true);
 ```
 
 Tokens are refreshed automatically at 75% of their lifetime. On a `401 Unauthorized` response the service transparently fetches a new token and retries once.
@@ -146,11 +187,33 @@ Every list resource exposes three access patterns:
 
 ---
 
+### Search Filter Syntax
+
+Many list methods accept a `search` parameter. The value is a JSON-encoded Akeneo search filter following the [Akeneo filter syntax](https://api.akeneo.com/documentation/filter.html):
+
+```csharp
+// Products enabled in the ecommerce channel
+var search = """{"enabled":[{"operator":"=","value":true}]}""";
+
+// Products updated since a date
+var search = """{"updated":[{"operator":">","value":"2024-01-01 00:00:00"}]}""";
+
+// Products in a specific category (including children)
+var search = """{"categories":[{"operator":"IN CHILDREN","value":["master"]}]}""";
+
+// Attributes of a specific type
+var search = """{"type":[{"operator":"IN","value":["pim_catalog_simpleselect","pim_catalog_multiselect"]}]}""";
+```
+
+The `search` value must be URL-safe JSON — the library handles encoding automatically.
+
+---
+
 ### System Information
 
 ```csharp
 var info = await context.GetSystemInformationAsync();
-Console.WriteLine($"Akeneo version: {info.Version}");
+Console.WriteLine($"Akeneo version: {info.Version}, edition: {info.Edition}");
 ```
 
 ---
@@ -164,15 +227,26 @@ The preferred modern API uses product UUIDs.
 await foreach (var product in context.StreamProductUuidsAsync())
     Console.WriteLine($"{product.Uuid} — enabled: {product.Enabled}");
 
-// Stream with a search filter (JSON-encoded Akeneo search syntax)
+// Stream with search filter, scoped to a channel with specific locales
 var search = """{"enabled":[{"operator":"=","value":true}]}""";
-await foreach (var product in context.StreamProductUuidsAsync(search: search))
+await foreach (var product in context.StreamProductUuidsAsync(
+    search: search,
+    scope: "ecommerce",
+    locales: "en_US,fr_FR"))
+{
     Console.WriteLine(product.Uuid);
+}
+
+// Include CDN share links for asset_collection attribute values
+await foreach (var product in context.StreamProductUuidsAsync(withAssetShareLinks: true))
+{
+    // product.Values["my_asset_collection"][0].GetLinkedData<Dictionary<string, AssetCollectionLinkedDataEntry>>()
+}
 
 // Single product by UUID
 var product = await context.GetProductUuidAsync("a4f47e32-b29c-4f3d-a0b2-123456789abc");
 
-// Create or update
+// Create or update (PATCH)
 await context.CreateOrUpdateProductUuidAsync(new ProductUuid
 {
     Uuid = "a4f47e32-b29c-4f3d-a0b2-123456789abc",
@@ -202,7 +276,67 @@ await context.CreateOrUpdateProductIdentifierAsync(new ProductIdentifier
     Family = "clothing",
     Enabled = true
 });
+
+var draft = await context.GetProductIdentifierDraftAsync("my-sku-001");
 ```
+
+---
+
+### Reading Product Attribute Values
+
+Product attribute values live in `product.Values`, keyed by attribute code. Each entry is a list of `ProductValue` objects (one per locale/scope combination).
+
+```csharp
+var product = await context.GetProductUuidAsync("a4f47e32-b29c-4f3d-a0b2-123456789abc");
+
+if (product.Values != null && product.Values.TryGetValue("name", out var nameValues))
+{
+    // Get the en_US value (non-scopable attribute)
+    var enValue = nameValues.FirstOrDefault(v => v.Locale == "en_US");
+    Console.WriteLine(enValue?.GetStringData()); // returns string directly
+}
+
+// Numeric attribute
+if (product.Values.TryGetValue("weight", out var weightValues))
+{
+    var metric = weightValues.FirstOrDefault(v => v.Locale == null && v.Scope == null)
+                             ?.GetData<MetricValue>();
+    Console.WriteLine($"{metric?.Amount} {metric?.Unit}"); // e.g. "1.5 KILOGRAM"
+}
+
+// Boolean attribute
+if (product.Values.TryGetValue("is_new", out var isNewValues))
+{
+    bool? isNew = isNewValues.FirstOrDefault()?.GetData<bool>();
+}
+
+// Multiselect attribute (list of option codes)
+if (product.Values.TryGetValue("color", out var colorValues))
+{
+    var codes = colorValues.FirstOrDefault()?.GetData<List<string>>();
+}
+
+// Price collection
+if (product.Values.TryGetValue("price", out var priceValues))
+{
+    var prices = priceValues.FirstOrDefault()
+                            ?.GetData<List<Dictionary<string, object?>>>();
+    // Each dict has "amount" and "currency" keys
+}
+
+// Asset collection — get CDN share links (requires withAssetShareLinks: true)
+if (product.Values.TryGetValue("packshots", out var assetValues))
+{
+    var links = assetValues.FirstOrDefault()
+        ?.GetLinkedData<Dictionary<string, AssetCollectionLinkedDataEntry>>();
+
+    foreach (var (assetCode, entry) in links ?? [])
+    foreach (var link in entry.ShareLinks ?? [])
+        Console.WriteLine($"{assetCode}: {link.Links?.Self?.Href}");
+}
+```
+
+`GetStringData()` covers text, textarea, identifier, date, file, image, and simpleselect attributes. For all other types use `GetData<T>()` with the appropriate type.
 
 ---
 
@@ -220,6 +354,8 @@ await context.CreateOrUpdateProductModelAsync(new ProductModel
     Family = "clothing",
     FamilyVariant = "clothing_color_size"
 });
+
+var draft = await context.GetProductModelDraftAsync("summer_collection_2024");
 ```
 
 ---
@@ -230,7 +366,9 @@ await context.CreateOrUpdateProductModelAsync(new ProductModel
 await foreach (var file in context.StreamProductMediaFilesAsync())
     Console.WriteLine($"{file.Code} — {file.MimeType}");
 
-byte[] bytes = await context.DownloadProductMediaFileAsync("f/f/c/f/ffcf299bae0e4aeb0b85ea232722cf2a5efea125_image.jpg");
+var fileMeta = await context.GetProductMediaFileAsync("f/f/c/f/ffcf2...125_image.jpg");
+
+byte[] bytes = await context.DownloadProductMediaFileAsync("f/f/c/f/ffcf2...125_image.jpg");
 File.WriteAllBytes("output.jpg", bytes);
 ```
 
@@ -255,6 +393,12 @@ await foreach (var variant in context.StreamFamilyVariantsAsync("clothing"))
     Console.WriteLine(variant.Code);
 
 var variant = await context.GetFamilyVariantAsync("clothing", "clothing_color_size");
+
+await context.CreateOrUpdateFamilyVariantAsync("clothing", new FamilyVariant
+{
+    Code = "clothing_color_size",
+    Labels = new() { ["en_US"] = "Color and size" }
+});
 ```
 
 ---
@@ -269,7 +413,17 @@ await foreach (var attr in context.StreamAttributesAsync())
 var search = """{"type":[{"operator":"IN","value":["pim_catalog_simpleselect"]}]}""";
 var selectAttrs = await context.GetAttributeListFullAsync(search: search);
 
+// Include table select options (for pim_catalog_table attributes)
+var tableAttrs = await context.GetAttributeListFullAsync(withTableSelectOptions: true);
+
 var attr = await context.GetAttributeAsync("accessories_care_instructions");
+
+await context.CreateOrUpdateAttributeAsync(new AkeneoAttribute
+{
+    Code = "my_text_attr",
+    Type = "pim_catalog_text",
+    Group = "general"
+});
 ```
 
 ---
@@ -277,11 +431,28 @@ var attr = await context.GetAttributeAsync("accessories_care_instructions");
 ### Attribute Options & Groups
 
 ```csharp
+// Options
+await foreach (var option in context.StreamAttributeOptionsAsync("color"))
+    Console.WriteLine($"{option.Code}");
+
 var options = await context.GetAttributeOptionListFullAsync("color");
 var option  = await context.GetAttributeOptionAsync("color", "red");
 
+await context.CreateOrUpdateAttributeOptionAsync("color", new AttributeOption
+{
+    Code = "navy",
+    Labels = new() { ["en_US"] = "Navy Blue" }
+});
+
+// Groups
 await foreach (var group in context.StreamAttributeGroupsAsync())
     Console.WriteLine(group.Code);
+
+await context.CreateOrUpdateAttributeGroupAsync(new AttributeGroup
+{
+    Code = "marketing",
+    Labels = new() { ["en_US"] = "Marketing" }
+});
 ```
 
 ---
@@ -292,9 +463,20 @@ await foreach (var group in context.StreamAttributeGroupsAsync())
 await foreach (var cat in context.StreamCategoriesAsync())
     Console.WriteLine($"{cat.Code} — parent: {cat.Parent}");
 
+// Include enriched attributes (category media, labels)
+await foreach (var cat in context.StreamCategoriesAsync(withEnrichedAttributes: true))
+    Console.WriteLine(cat.Code);
+
 var cat = await context.GetCategoryAsync("master");
 
-byte[] bytes = await context.DownloadCategoryMediaFileAsync("c/7/3/c/c73cc4c27c46f22447bcda64db3345269e29ecf4_banner.png");
+await context.CreateOrUpdateCategoryAsync(new Category
+{
+    Code = "sale",
+    Parent = "master",
+    Labels = new() { ["en_US"] = "Sale" }
+});
+
+byte[] bytes = await context.DownloadCategoryMediaFileAsync("c/7/3/c/c73cc4...ecf4_banner.png");
 ```
 
 ---
@@ -302,9 +484,20 @@ byte[] bytes = await context.DownloadCategoryMediaFileAsync("c/7/3/c/c73cc4c27c4
 ### Channels, Locales, Currencies, Measurement Families
 
 ```csharp
-var channels            = await context.GetChannelListFullAsync();
-var locales             = await context.GetLocaleListFullAsync();
-var currencies          = await context.GetCurrencyListFullAsync();
+// Channels
+var channels = await context.GetChannelListFullAsync();
+var channel  = await context.GetChannelAsync("ecommerce");
+await context.CreateOrUpdateChannelAsync(new Channel { Code = "b2b", /* ... */ });
+
+// Locales
+var locales = await context.GetLocaleListFullAsync();
+var locale  = await context.GetLocaleAsync("en_US");
+
+// Currencies
+var currencies = await context.GetCurrencyListFullAsync();
+var currency   = await context.GetCurrencyAsync("USD");
+
+// Measurement families (no paging — returns all at once)
 var measurementFamilies = await context.GetMeasurementFamilyListAsync();
 ```
 
@@ -315,6 +508,12 @@ var measurementFamilies = await context.GetMeasurementFamilyListAsync();
 ```csharp
 var all   = await context.GetAssociationTypeListFullAsync();
 var assoc = await context.GetAssociationTypeAsync("x_sell");
+
+await context.CreateOrUpdateAssociationTypeAsync(new AssociationType
+{
+    Code = "bundle",
+    Labels = new() { ["en_US"] = "Bundle" }
+});
 ```
 
 ---
@@ -322,13 +521,39 @@ var assoc = await context.GetAssociationTypeAsync("x_sell");
 ### Reference Entities
 
 ```csharp
-var entities   = await context.GetReferenceEntityListAsync();
-var entity     = await context.GetReferenceEntityAsync("brand");
-var attributes = await context.GetReferenceEntityAttributeListAsync("brand");
-var records    = await context.GetReferenceEntityRecordListAsync("brand");
-var record     = await context.GetReferenceEntityRecordAsync("brand", "nike");
+// Entity definitions
+var entities = await context.GetReferenceEntityListFullAsync();
+var entity   = await context.GetReferenceEntityAsync("brand");
+await context.CreateOrUpdateReferenceEntityAsync(new ReferenceEntity { Code = "brand" });
 
-byte[] bytes = await context.DownloadReferenceEntityMediaFileAsync("f/f/c/f/ffcf299bae0e4aeb0b85ea232722cf2a5efea125_logo.png");
+// Entity attributes
+var attributes = await context.GetReferenceEntityAttributeListAsync("brand");
+var attribute  = await context.GetReferenceEntityAttributeAsync("brand", "description");
+await context.CreateOrUpdateReferenceEntityAttributeAsync("brand", new ReferenceEntityAttribute
+{
+    Code = "description",
+    Type = "text"
+});
+
+// Attribute options
+var options = await context.GetReferenceEntityAttributeOptionListAsync("brand", "country");
+await context.CreateOrUpdateReferenceEntityAttributeOptionAsync("brand", "country",
+    new ReferenceEntityAttributeOption { Code = "se", Labels = new() { ["en_US"] = "Sweden" } });
+
+// Records
+await foreach (var record in context.StreamReferenceEntityRecordsAsync("brand"))
+    Console.WriteLine(record.Code);
+
+var records = await context.GetReferenceEntityRecordListFullAsync("brand");
+var record  = await context.GetReferenceEntityRecordAsync("brand", "nike");
+await context.CreateOrUpdateReferenceEntityRecordAsync("brand", new ReferenceEntityRecord
+{
+    Code = "acme",
+    Values = new() { ["name"] = new() { new ReferenceEntityRecordValue { Data = "Acme Corp", Locale = "en_US" } } }
+});
+
+// Media files
+byte[] bytes = await context.DownloadReferenceEntityMediaFileAsync("f/f/c/f/...logo.png");
 ```
 
 ---
@@ -336,10 +561,33 @@ byte[] bytes = await context.DownloadReferenceEntityMediaFileAsync("f/f/c/f/ffcf
 ### Assets
 
 ```csharp
-var assetFamilies = await context.GetAssetFamilyListAsync();
-var assetFamily   = await context.GetAssetFamilyAsync("packshots");
-var attrs         = await context.GetAssetAttributeListAsync("packshots");
+// Asset families
+var families  = await context.GetAssetFamilyListFullAsync();
+var family    = await context.GetAssetFamilyAsync("packshots");
+await context.CreateOrUpdateAssetFamilyAsync(new AssetFamily { Code = "packshots" });
 
+// Asset family attributes
+var attrs = await context.GetAssetAttributeListAsync("packshots");
+var attr  = await context.GetAssetAttributeAsync("packshots", "media_file");
+await context.CreateOrUpdateAssetAttributeAsync("packshots", new AssetAttribute
+{
+    Code = "alt_text",
+    Type = "text"
+});
+
+// Asset attribute options
+var options = await context.GetAssetAttributeOptionListAsync("packshots", "orientation");
+await context.CreateOrUpdateAssetAttributeOptionAsync("packshots", "orientation",
+    new AssetAttributeOption { Code = "landscape" });
+
+// Assets within a family
+await foreach (var asset in context.StreamAssetsAsync("packshots"))
+    Console.WriteLine(asset.Code);
+
+var asset = await context.GetAssetAsync("packshots", "front_view");
+await context.CreateOrUpdateAssetAsync("packshots", new Asset { Code = "front_view" });
+
+// Download asset binary
 byte[] bytes = await context.DownloadAssetMediaFileAsync("path/to/asset_file.jpg");
 ```
 
@@ -348,11 +596,51 @@ byte[] bytes = await context.DownloadAssetMediaFileAsync("path/to/asset_file.jpg
 ### Jobs
 
 ```csharp
-var result    = await context.LaunchExportJobAsync("csv_product_export");
+// List available jobs
+var jobs = await context.GetJobListFullAsync();
+var job  = await context.GetJobAsync("csv_product_export");
+
+// Launch export
+var result = await context.LaunchExportJobAsync("csv_product_export");
+Console.WriteLine($"Launched job execution #{result.JobExecutionId}");
+
+// Dry run
+var dryRun = await context.LaunchExportJobAsync("csv_product_export", isDryRun: true);
+
+// Launch import
+var importResult = await context.LaunchImportJobAsync("csv_product_import");
+
+// Poll execution status
 var execution = await context.GetJobExecutionAsync(result.JobExecutionId);
 Console.WriteLine($"Status: {execution.Status}");
 
-var importResult = await context.LaunchImportJobAsync("csv_product_import");
+// Browse execution history
+await foreach (var exec in context.StreamJobExecutionsAsync())
+    Console.WriteLine($"{exec.JobLabel} — {exec.Status}");
+```
+
+---
+
+### Workflows
+
+```csharp
+// Workflow definitions
+await foreach (var workflow in context.StreamWorkflowsAsync())
+    Console.WriteLine(workflow.Code);
+
+var workflow = await context.GetWorkflowAsync("product_review");
+
+// Workflow tasks (items awaiting action)
+await foreach (var task in context.StreamWorkflowTasksAsync())
+    Console.WriteLine($"{task.Uuid} — {task.Status}");
+
+// Include attribute values on tasks
+var tasks = await context.GetWorkflowTaskListFullAsync(withAttributes: true);
+
+var task = await context.GetWorkflowTaskAsync("task-uuid-here");
+
+// Step assignees
+var assignees = await context.GetWorkflowStepAssigneeListFullAsync("step-uuid-here");
 ```
 
 ---
@@ -360,9 +648,55 @@ var importResult = await context.LaunchImportJobAsync("csv_product_import");
 ### Catalogs
 
 ```csharp
-var catalogs    = await context.GetCatalogListAsync();
-var catalog     = await context.GetCatalogAsync("my-catalog-id");
-var productPage = await context.GetCatalogProductUuidListAsync("my-catalog-id", page: 1, limit: 100);
+// List catalogs
+await foreach (var catalog in context.StreamCatalogsAsync())
+    Console.WriteLine($"{catalog.Id} — {catalog.Name}");
+
+var catalog = await context.GetCatalogAsync("my-catalog-id");
+
+// Stream all product UUIDs from a catalog
+await foreach (var uuid in context.StreamCatalogProductUuidsAsync("my-catalog-id"))
+    Console.WriteLine(uuid);
+
+// Stream full product objects from a catalog
+await foreach (var product in context.StreamCatalogProductsAsync("my-catalog-id"))
+    Console.WriteLine(product.Uuid);
+
+// Single product from catalog
+var product = await context.GetCatalogProductAsync("my-catalog-id", "product-uuid");
+
+// Mapped products (returns raw JSON string — use when catalog has a product mapping configured)
+var mappedJson   = await context.GetCatalogMappedProductListAsync("my-catalog-id");
+var mappedModels = await context.GetCatalogMappedModelListAsync("my-catalog-id");
+var mappedVars   = await context.GetCatalogMappedVariantListAsync("my-catalog-id");
+
+// Mapping schema
+var schema = await context.GetCatalogMappingSchemaAsync("my-catalog-id");
+```
+
+---
+
+### Utilities
+
+```csharp
+// System information
+var info = await context.GetSystemInformationAsync();
+Console.WriteLine($"Akeneo {info.Edition} {info.Version}");
+
+// API overview (available endpoints)
+var overview = await context.GetApiOverviewAsync();
+
+// User channel and locale permissions
+var channelPerms = await context.GetUserChannelsPermissionsAsync("user-uuid");
+var localePerms  = await context.GetUserLocalesPermissionsAsync("user-uuid");
+
+// Extensions
+await foreach (var ext in context.StreamExtensionsAsync())
+    Console.WriteLine(ext.Code);
+
+// Modelization suggestions
+var suggestions = await context.GetModelizationSuggestionListAsync();
+var suggestion  = await context.GetModelizationSuggestionAsync("suggestion-uuid");
 ```
 
 ---
