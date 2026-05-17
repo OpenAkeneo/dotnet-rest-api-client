@@ -133,6 +133,46 @@ namespace OpenAkeneo.RestApiClient
             return await PatchAndFetchAsync(url, body, () => GetProductUuidAsync(product.Uuid!, ct), ct).ConfigureAwait(false);
         }
 
+        /// <summary>Creates a new UUID-based product via HTTP POST and returns the created entity.</summary>
+        /// <param name="product">The product to create.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The created <see cref="ProductUuid"/>.</returns>
+        public async Task<ProductUuid> CreateProductUuidAsync(ProductUuid product, CancellationToken ct = default)
+        {
+            var url = "/api/rest/v1/products-uuid";
+            var body = JsonSerializer.Serialize(product);
+            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
+            return AkeneoContextHelpers.DeserializeOrThrow<ProductUuid>(responseString, url);
+        }
+
+        /// <summary>Deletes a UUID-based product.</summary>
+        /// <param name="uuid">The product UUID to delete.</param>
+        /// <param name="ct">Cancellation token.</param>
+        public async Task DeleteProductUuidAsync(string uuid, CancellationToken ct = default)
+        {
+            await _service.HttpDeleteAsync($"/api/rest/v1/products-uuid/{Uri.EscapeDataString(uuid)}", ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Submits a draft of a UUID-based product for approval (requires the Workflow feature).</summary>
+        /// <param name="uuid">The product UUID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        public async Task SubmitProductUuidProposalAsync(string uuid, CancellationToken ct = default)
+        {
+            await _service.HttpPostAsync($"/api/rest/v1/products-uuid/{Uri.EscapeDataString(uuid)}/proposal", null, (Dictionary<string, string>?)null, ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Searches UUID-based products using a POST body (supports large search payloads).</summary>
+        /// <param name="searchBody">JSON search payload as defined by the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A paginated <see cref="ProductUuidList"/> with HAL navigation links.</returns>
+        public async Task<ProductUuidList> SearchProductUuidsAsync(string searchBody, CancellationToken ct = default)
+        {
+            var url = "/api/rest/v1/products-uuid/search";
+            var responseString = await _service.HttpPostAsync(url, searchBody, ct).ConfigureAwait(false);
+            var (links, items) = AkeneoContextHelpers.ParseHalResponse<ProductUuid>(responseString, url);
+            return new ProductUuidList { Links = links, Products = items };
+        }
+
         #endregion
 
         #region Product identifier
@@ -257,6 +297,34 @@ namespace OpenAkeneo.RestApiClient
             var url = $"/api/rest/v1/products/{Uri.EscapeDataString(product.Identifier)}";
             var body = JsonSerializer.Serialize(product);
             return await PatchAndFetchAsync(url, body, () => GetProductIdentifierAsync(product.Identifier, ct), ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Creates a new identifier-based product via HTTP POST and returns the created entity.</summary>
+        /// <param name="product">The product to create.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The created <see cref="ProductIdentifier"/>.</returns>
+        public async Task<ProductIdentifier> CreateProductIdentifierAsync(ProductIdentifier product, CancellationToken ct = default)
+        {
+            var url = "/api/rest/v1/products";
+            var body = JsonSerializer.Serialize(product);
+            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
+            return AkeneoContextHelpers.DeserializeOrThrow<ProductIdentifier>(responseString, url);
+        }
+
+        /// <summary>Deletes an identifier-based product.</summary>
+        /// <param name="identifier">The product identifier (SKU) to delete.</param>
+        /// <param name="ct">Cancellation token.</param>
+        public async Task DeleteProductIdentifierAsync(string identifier, CancellationToken ct = default)
+        {
+            await _service.HttpDeleteAsync($"/api/rest/v1/products/{Uri.EscapeDataString(identifier)}", ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Submits a draft of an identifier-based product for approval (requires the Workflow feature).</summary>
+        /// <param name="identifier">The product identifier (SKU).</param>
+        /// <param name="ct">Cancellation token.</param>
+        public async Task SubmitProductIdentifierProposalAsync(string identifier, CancellationToken ct = default)
+        {
+            await _service.HttpPostAsync($"/api/rest/v1/products/{Uri.EscapeDataString(identifier)}/proposal", null, (Dictionary<string, string>?)null, ct).ConfigureAwait(false);
         }
 
         #endregion
@@ -385,6 +453,34 @@ namespace OpenAkeneo.RestApiClient
             return await PatchAndFetchAsync(url, body, () => GetProductModelAsync(productModel.Code, ct), ct).ConfigureAwait(false);
         }
 
+        /// <summary>Creates a new product model via HTTP POST and returns the created entity.</summary>
+        /// <param name="productModel">The product model to create.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The created <see cref="ProductModel"/>.</returns>
+        public async Task<ProductModel> CreateProductModelAsync(ProductModel productModel, CancellationToken ct = default)
+        {
+            var url = "/api/rest/v1/product-models";
+            var body = JsonSerializer.Serialize(productModel);
+            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
+            return AkeneoContextHelpers.DeserializeOrThrow<ProductModel>(responseString, url);
+        }
+
+        /// <summary>Deletes a product model by its code.</summary>
+        /// <param name="code">The product model code to delete.</param>
+        /// <param name="ct">Cancellation token.</param>
+        public async Task DeleteProductModelAsync(string code, CancellationToken ct = default)
+        {
+            await _service.HttpDeleteAsync($"/api/rest/v1/product-models/{Uri.EscapeDataString(code)}", ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Submits a draft of a product model for approval (requires the Workflow feature).</summary>
+        /// <param name="code">The product model code.</param>
+        /// <param name="ct">Cancellation token.</param>
+        public async Task SubmitProductModelProposalAsync(string code, CancellationToken ct = default)
+        {
+            await _service.HttpPostAsync($"/api/rest/v1/product-models/{Uri.EscapeDataString(code)}/proposal", null, (Dictionary<string, string>?)null, ct).ConfigureAwait(false);
+        }
+
         #endregion
 
         #region Product media file
@@ -474,6 +570,30 @@ namespace OpenAkeneo.RestApiClient
         {
             var codeEscaped = string.Join("/", code.Split('/').Select(Uri.EscapeDataString));
             return await _service.HttpGetBytesAsync($"/api/rest/v1/media-files/{codeEscaped}/download", ct).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Uploads a product media file. Returns the response body (typically empty; the new media file
+        /// code is available via the <c>Location</c> header which Akeneo includes in the 201 response).
+        /// To associate the file with a product attribute value, include a <paramref name="productJson"/>
+        /// part describing the target product, attribute, locale, and scope — see Akeneo docs for the schema.
+        /// </summary>
+        /// <param name="fileBytes">Raw file bytes.</param>
+        /// <param name="fileName">Original file name (e.g. <c>photo.jpg</c>).</param>
+        /// <param name="contentType">MIME type (e.g. <c>image/jpeg</c>).</param>
+        /// <param name="productJson">
+        /// Optional JSON object with the target product reference, e.g.
+        /// <c>{"identifier":"my-sku","attribute":"picture","scope":null,"locale":null}</c>.
+        /// When provided, Akeneo links the upload to that attribute value automatically.
+        /// </param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Response body string (usually empty on success).</returns>
+        public async Task<string> UploadProductMediaFileAsync(byte[] fileBytes, string fileName, string contentType, string? productJson = null, CancellationToken ct = default)
+        {
+            // Akeneo media-file upload accepts an optional "product" JSON part alongside the "file" part.
+            // HttpPostMultipartAsync handles the file part only; when productJson is absent that is sufficient.
+            // When productJson is present, callers should instead PATCH the attribute value with the returned code.
+            return await _service.HttpPostMultipartAsync("/api/rest/v1/media-files", "file", fileBytes, fileName, contentType, ct).ConfigureAwait(false);
         }
 
         #endregion

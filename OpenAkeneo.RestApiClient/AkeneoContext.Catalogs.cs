@@ -228,6 +228,67 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<CatalogMappingSchema>(responseString, url);
         }
 
+        /// <summary>Creates a new catalog and returns the created entity.</summary>
+        /// <param name="catalog">The catalog to create (must include at least <c>name</c>).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The created <see cref="Catalog"/>.</returns>
+        public async Task<Catalog> CreateCatalogAsync(Catalog catalog, CancellationToken ct = default)
+        {
+            var url = "/api/rest/v1/catalogs";
+            var body = JsonSerializer.Serialize(catalog);
+            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
+            return AkeneoContextHelpers.DeserializeOrThrow<Catalog>(responseString, url);
+        }
+
+        /// <summary>Updates a catalog's properties (e.g. name, enabled) and returns the updated entity.</summary>
+        /// <param name="catalogId">The catalog UUID.</param>
+        /// <param name="catalog">The properties to update.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The updated <see cref="Catalog"/>.</returns>
+        public async Task<Catalog> UpdateCatalogAsync(string catalogId, Catalog catalog, CancellationToken ct = default)
+        {
+            var url = $"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}";
+            var body = JsonSerializer.Serialize(catalog);
+            return await PatchAndFetchAsync(url, body, () => GetCatalogAsync(catalogId, ct), ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Deletes a catalog.</summary>
+        /// <param name="catalogId">The catalog UUID to delete.</param>
+        /// <param name="ct">Cancellation token.</param>
+        public async Task DeleteCatalogAsync(string catalogId, CancellationToken ct = default)
+        {
+            await _service.HttpDeleteAsync($"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}", ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Duplicates an existing catalog and returns the new catalog.</summary>
+        /// <param name="catalogId">The UUID of the catalog to duplicate.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The newly created duplicate <see cref="Catalog"/>.</returns>
+        public async Task<Catalog> DuplicateCatalogAsync(string catalogId, CancellationToken ct = default)
+        {
+            var url = $"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/duplicate";
+            var responseString = await _service.HttpPostAsync(url, string.Empty, ct).ConfigureAwait(false);
+            return AkeneoContextHelpers.DeserializeOrThrow<Catalog>(responseString, url);
+        }
+
+        /// <summary>Creates or replaces the product mapping schema for a catalog.</summary>
+        /// <param name="catalogId">The catalog UUID.</param>
+        /// <param name="schemaJson">The mapping schema as a raw JSON string.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Response body string (typically empty on success).</returns>
+        public async Task<string> SetCatalogMappingSchemaAsync(string catalogId, string schemaJson, CancellationToken ct = default)
+        {
+            return await _service.HttpPutAsync($"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/mapping-schemas/product", schemaJson, ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Deletes the product mapping schema for a catalog.</summary>
+        /// <param name="catalogId">The catalog UUID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        public async Task DeleteCatalogMappingSchemaAsync(string catalogId, CancellationToken ct = default)
+        {
+            await _service.HttpDeleteAsync($"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/mapping-schemas/product", ct).ConfigureAwait(false);
+        }
+
         #endregion
 
 

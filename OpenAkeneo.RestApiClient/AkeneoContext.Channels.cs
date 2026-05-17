@@ -96,6 +96,18 @@ namespace OpenAkeneo.RestApiClient
             return await PatchAndFetchAsync(url, body, () => GetChannelAsync(channel.Code, ct), ct).ConfigureAwait(false);
         }
 
+        /// <summary>Creates a new channel via HTTP POST and returns the created entity.</summary>
+        /// <param name="channel">The channel to create.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The created <see cref="Channel"/>.</returns>
+        public async Task<Channel> CreateChannelAsync(Channel channel, CancellationToken ct = default)
+        {
+            var url = "/api/rest/v1/channels";
+            var body = JsonSerializer.Serialize(channel);
+            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
+            return AkeneoContextHelpers.DeserializeOrThrow<Channel>(responseString, url);
+        }
+
         #endregion
 
         #region Locale
@@ -271,6 +283,20 @@ namespace OpenAkeneo.RestApiClient
             var responseString = await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
 
             return AkeneoContextHelpers.DeserializeOrThrow<List<MeasurementFamily>>(responseString, url);
+        }
+
+        /// <summary>
+        /// Creates or updates measurement families in bulk via HTTP PATCH.
+        /// The Akeneo API accepts an array of measurement family objects and returns an array of per-item status results.
+        /// </summary>
+        /// <param name="measurementFamilies">The list of measurement families to create or update.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Response body string (JSON array with per-item status codes and errors).</returns>
+        public async Task<string> CreateOrUpdateMeasurementFamiliesAsync(List<MeasurementFamily> measurementFamilies, CancellationToken ct = default)
+        {
+            var url = "/api/rest/v1/measurement-families";
+            var body = JsonSerializer.Serialize(measurementFamilies);
+            return await _service.HttpPatchAsync(url, body, ct).ConfigureAwait(false);
         }
 
         #endregion

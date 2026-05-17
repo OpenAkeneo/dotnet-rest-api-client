@@ -8,7 +8,7 @@
 
     <!-- NuGet package metadata -->
     <PackageId>OpenAkeneo.RestApiClient</PackageId>
-    <Version>0.3.1</Version>
+    <Version>0.4.0</Version>
     <Authors>OpenAkeneo</Authors>
     <Description>Unofficial .NET client library for the Akeneo PIM REST API with typed models, automatic token management, streaming pagination, retry handling and much more.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

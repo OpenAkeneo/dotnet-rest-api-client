@@ -315,6 +315,17 @@ namespace OpenAkeneo.RestApiClient
             return await _service.HttpGetBytesAsync($"/api/rest/v1/reference-entities-media-files/{codeEscaped}", ct).ConfigureAwait(false);
         }
 
+        /// <summary>Uploads a reference entity media file and returns the created file code from the response.</summary>
+        /// <param name="fileBytes">Raw file bytes.</param>
+        /// <param name="fileName">Original file name (e.g. <c>portrait.jpg</c>).</param>
+        /// <param name="contentType">MIME type (e.g. <c>image/jpeg</c>).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Response body string (contains the created file code).</returns>
+        public async Task<string> UploadReferenceEntityMediaFileAsync(byte[] fileBytes, string fileName, string contentType, CancellationToken ct = default)
+        {
+            return await _service.HttpPostMultipartAsync("/api/rest/v1/reference-entities-media-files", "file", fileBytes, fileName, contentType, ct).ConfigureAwait(false);
+        }
+
         #endregion
 
     }

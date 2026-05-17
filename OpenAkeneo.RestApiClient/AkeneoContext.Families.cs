@@ -101,11 +101,21 @@ namespace OpenAkeneo.RestApiClient
             return await PatchAndFetchAsync(url, body, () => GetFamilyAsync(family.Code, ct), ct).ConfigureAwait(false);
         }
 
+        /// <summary>Creates a new product family via HTTP POST and returns the created entity.</summary>
+        /// <param name="family">The family to create.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The created <see cref="Family"/>.</returns>
+        public async Task<Family> CreateFamilyAsync(Family family, CancellationToken ct = default)
+        {
+            var url = "/api/rest/v1/families";
+            var body = JsonSerializer.Serialize(family);
+            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
+            return AkeneoContextHelpers.DeserializeOrThrow<Family>(responseString, url);
+        }
+
         #endregion
 
         #region Family Variant
-
-        // TODO: Family variant https://api.akeneo.com/api-reference.html#Familyvariant
 
         /// <summary>Streams all variants of a given product family, following HAL pagination automatically.</summary>
         /// <param name="familyCode">The family code whose variants to enumerate.</param>
@@ -197,6 +207,19 @@ namespace OpenAkeneo.RestApiClient
             var url = $"/api/rest/v1/families/{Uri.EscapeDataString(familyCode)}/variants/{Uri.EscapeDataString(variant.Code)}";
             var body = JsonSerializer.Serialize(variant);
             return await PatchAndFetchAsync(url, body, () => GetFamilyVariantAsync(familyCode, variant.Code, ct), ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Creates a new family variant via HTTP POST and returns the created entity.</summary>
+        /// <param name="familyCode">The family code to create the variant under.</param>
+        /// <param name="variant">The variant to create.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The created <see cref="FamilyVariant"/>.</returns>
+        public async Task<FamilyVariant> CreateFamilyVariantAsync(string familyCode, FamilyVariant variant, CancellationToken ct = default)
+        {
+            var url = $"/api/rest/v1/families/{Uri.EscapeDataString(familyCode)}/variants";
+            var body = JsonSerializer.Serialize(variant);
+            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
+            return AkeneoContextHelpers.DeserializeOrThrow<FamilyVariant>(responseString, url);
         }
 
         #endregion

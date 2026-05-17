@@ -97,6 +97,18 @@ namespace OpenAkeneo.RestApiClient
             return await PatchAndFetchAsync(url, body, () => GetAssociationTypeAsync(associationType.Code, ct), ct).ConfigureAwait(false);
         }
 
+        /// <summary>Creates a new association type via HTTP POST and returns the created entity.</summary>
+        /// <param name="associationType">The association type to create.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The created <see cref="AssociationType"/>.</returns>
+        public async Task<AssociationType> CreateAssociationTypeAsync(AssociationType associationType, CancellationToken ct = default)
+        {
+            var url = "/api/rest/v1/association-types";
+            var body = JsonSerializer.Serialize(associationType);
+            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
+            return AkeneoContextHelpers.DeserializeOrThrow<AssociationType>(responseString, url);
+        }
+
         #endregion
 
     }

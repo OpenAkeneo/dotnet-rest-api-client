@@ -49,5 +49,11 @@ namespace OpenAkeneo.RestApiClient
 
         /// <summary>Performs a DELETE request with additional headers and returns the response body as a string.</summary>
         Task<string> HttpDeleteAsync(string url, Dictionary<string, string>? headers, CancellationToken ct = default);
+
+        /// <summary>Performs a PUT request with a JSON body and returns the response body as a string.</summary>
+        Task<string> HttpPutAsync(string url, string content, CancellationToken ct = default);
+
+        /// <summary>Performs a POST request with a multipart/form-data body (file upload) and returns the response body as a string.</summary>
+        Task<string> HttpPostMultipartAsync(string url, string fieldName, byte[] fileBytes, string fileName, string contentType, CancellationToken ct = default);
     }
 }

@@ -254,6 +254,27 @@ await context.CreateOrUpdateProductUuidAsync(new ProductUuid
     Family = "clothing"
 });
 
+// Create (POST — returns the created product)
+var created = await context.CreateProductUuidAsync(new ProductUuid
+{
+    Family = "clothing",
+    Enabled = true
+});
+
+// Delete
+await context.DeleteProductUuidAsync("a4f47e32-b29c-4f3d-a0b2-123456789abc");
+
+// Submit for approval (requires Workflow feature)
+await context.SubmitProductUuidProposalAsync("a4f47e32-b29c-4f3d-a0b2-123456789abc");
+
+// Search product UUIDs (returns the matching UUIDs list resource)
+var search = """{"enabled":[{"operator":"=","value":true}]}""";
+var uuids = await context.SearchProductUuidsAsync(search: search);
+
+// Upload a media file and get back the file code
+var fileBytes = await File.ReadAllBytesAsync("image.jpg");
+var fileCode = await context.UploadProductMediaFileAsync(fileBytes, "image.jpg", "image/jpeg");
+
 // Draft (requires Workflow feature)
 var draft = await context.GetProductUuidDraftAsync("a4f47e32-b29c-4f3d-a0b2-123456789abc");
 ```
@@ -276,6 +297,19 @@ await context.CreateOrUpdateProductIdentifierAsync(new ProductIdentifier
     Family = "clothing",
     Enabled = true
 });
+
+// Create (POST)
+var created = await context.CreateProductIdentifierAsync(new ProductIdentifier
+{
+    Identifier = "new-sku-002",
+    Family = "clothing"
+});
+
+// Delete
+await context.DeleteProductIdentifierAsync("my-sku-001");
+
+// Submit for approval (requires Workflow feature)
+await context.SubmitProductIdentifierProposalAsync("my-sku-001");
 
 var draft = await context.GetProductIdentifierDraftAsync("my-sku-001");
 ```
@@ -355,6 +389,20 @@ await context.CreateOrUpdateProductModelAsync(new ProductModel
     FamilyVariant = "clothing_color_size"
 });
 
+// Create (POST)
+var created = await context.CreateProductModelAsync(new ProductModel
+{
+    Code = "winter_2025",
+    Family = "clothing",
+    FamilyVariant = "clothing_color_size"
+});
+
+// Delete
+await context.DeleteProductModelAsync("summer_collection_2024");
+
+// Submit for approval (requires Workflow feature)
+await context.SubmitProductModelProposalAsync("summer_collection_2024");
+
 var draft = await context.GetProductModelDraftAsync("summer_collection_2024");
 ```
 
@@ -389,6 +437,13 @@ await context.CreateOrUpdateFamilyAsync(new Family
     Labels = new() { ["en_US"] = "My Family" }
 });
 
+// Create (POST)
+var createdFamily = await context.CreateFamilyAsync(new Family
+{
+    Code = "accessories",
+    AttributeAsLabel = "name"
+});
+
 await foreach (var variant in context.StreamFamilyVariantsAsync("clothing"))
     Console.WriteLine(variant.Code);
 
@@ -398,6 +453,13 @@ await context.CreateOrUpdateFamilyVariantAsync("clothing", new FamilyVariant
 {
     Code = "clothing_color_size",
     Labels = new() { ["en_US"] = "Color and size" }
+});
+
+// Create variant (POST)
+var createdVariant = await context.CreateFamilyVariantAsync("clothing", new FamilyVariant
+{
+    Code = "clothing_size_only",
+    Labels = new() { ["en_US"] = "Size only" }
 });
 ```
 
@@ -424,6 +486,14 @@ await context.CreateOrUpdateAttributeAsync(new AkeneoAttribute
     Type = "pim_catalog_text",
     Group = "general"
 });
+
+// Create (POST)
+var created = await context.CreateAttributeAsync(new AkeneoAttribute
+{
+    Code = "launch_date",
+    Type = "pim_catalog_date",
+    Group = "marketing"
+});
 ```
 
 ---
@@ -444,6 +514,13 @@ await context.CreateOrUpdateAttributeOptionAsync("color", new AttributeOption
     Labels = new() { ["en_US"] = "Navy Blue" }
 });
 
+// Create option (POST)
+var createdOption = await context.CreateAttributeOptionAsync("color", new AttributeOption
+{
+    Code = "teal",
+    Labels = new() { ["en_US"] = "Teal" }
+});
+
 // Groups
 await foreach (var group in context.StreamAttributeGroupsAsync())
     Console.WriteLine(group.Code);
@@ -452,6 +529,13 @@ await context.CreateOrUpdateAttributeGroupAsync(new AttributeGroup
 {
     Code = "marketing",
     Labels = new() { ["en_US"] = "Marketing" }
+});
+
+// Create group (POST)
+var createdGroup = await context.CreateAttributeGroupAsync(new AttributeGroup
+{
+    Code = "technical",
+    Labels = new() { ["en_US"] = "Technical" }
 });
 ```
 
@@ -476,6 +560,18 @@ await context.CreateOrUpdateCategoryAsync(new Category
     Labels = new() { ["en_US"] = "Sale" }
 });
 
+// Create (POST)
+var created = await context.CreateCategoryAsync(new Category
+{
+    Code = "new_arrivals",
+    Parent = "master",
+    Labels = new() { ["en_US"] = "New Arrivals" }
+});
+
+// Upload a category media file
+var imageBytes = await File.ReadAllBytesAsync("banner.png");
+var fileCode = await context.UploadCategoryMediaFileAsync(imageBytes, "banner.png", "image/png");
+
 byte[] bytes = await context.DownloadCategoryMediaFileAsync("c/7/3/c/c73cc4...ecf4_banner.png");
 ```
 
@@ -489,6 +585,14 @@ var channels = await context.GetChannelListFullAsync();
 var channel  = await context.GetChannelAsync("ecommerce");
 await context.CreateOrUpdateChannelAsync(new Channel { Code = "b2b", /* ... */ });
 
+// Create channel (POST)
+var created = await context.CreateChannelAsync(new Channel
+{
+    Code = "mobile",
+    Locales = ["en_US"],
+    Currencies = ["USD"]
+});
+
 // Locales
 var locales = await context.GetLocaleListFullAsync();
 var locale  = await context.GetLocaleAsync("en_US");
@@ -499,6 +603,12 @@ var currency   = await context.GetCurrencyAsync("USD");
 
 // Measurement families (no paging — returns all at once)
 var measurementFamilies = await context.GetMeasurementFamilyListAsync();
+
+// Create or update measurement families (PATCH — returns raw response JSON)
+var responseJson = await context.CreateOrUpdateMeasurementFamiliesAsync(new List<MeasurementFamily>
+{
+    new() { Code = "CUSTOM_WEIGHT", StandardUnitCode = "GRAM" }
+});
 ```
 
 ---
@@ -513,6 +623,13 @@ await context.CreateOrUpdateAssociationTypeAsync(new AssociationType
 {
     Code = "bundle",
     Labels = new() { ["en_US"] = "Bundle" }
+});
+
+// Create (POST)
+var created = await context.CreateAssociationTypeAsync(new AssociationType
+{
+    Code = "related",
+    Labels = new() { ["en_US"] = "Related" }
 });
 ```
 
@@ -554,6 +671,10 @@ await context.CreateOrUpdateReferenceEntityRecordAsync("brand", new ReferenceEnt
 
 // Media files
 byte[] bytes = await context.DownloadReferenceEntityMediaFileAsync("f/f/c/f/...logo.png");
+
+// Upload a reference entity media file
+var fileBytes = await File.ReadAllBytesAsync("logo.png");
+var fileCode = await context.UploadReferenceEntityMediaFileAsync(fileBytes, "logo.png", "image/png");
 ```
 
 ---
@@ -589,6 +710,10 @@ await context.CreateOrUpdateAssetAsync("packshots", new Asset { Code = "front_vi
 
 // Download asset binary
 byte[] bytes = await context.DownloadAssetMediaFileAsync("path/to/asset_file.jpg");
+
+// Upload an asset media file
+var fileBytes = await File.ReadAllBytesAsync("photo.jpg");
+var fileCode = await context.UploadAssetMediaFileAsync(fileBytes, "photo.jpg", "image/jpeg");
 ```
 
 ---
@@ -672,6 +797,23 @@ var mappedVars   = await context.GetCatalogMappedVariantListAsync("my-catalog-id
 
 // Mapping schema
 var schema = await context.GetCatalogMappingSchemaAsync("my-catalog-id");
+
+// Create catalog (POST)
+var created = await context.CreateCatalogAsync(new Catalog { Name = "B2B Catalog" });
+
+// Update catalog (PATCH — returns updated catalog)
+var updated = await context.UpdateCatalogAsync("my-catalog-id", new Catalog { Name = "Renamed" });
+
+// Duplicate catalog
+var copy = await context.DuplicateCatalogAsync("my-catalog-id");
+
+// Set or delete mapping schema
+var schemaJson = """{"properties":{"uuid":{"type":"string"}}}""";
+await context.SetCatalogMappingSchemaAsync("my-catalog-id", schemaJson);
+await context.DeleteCatalogMappingSchemaAsync("my-catalog-id");
+
+// Delete catalog
+await context.DeleteCatalogAsync("my-catalog-id");
 ```
 
 ---

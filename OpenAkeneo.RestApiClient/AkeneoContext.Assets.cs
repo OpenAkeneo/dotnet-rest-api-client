@@ -192,6 +192,17 @@ namespace OpenAkeneo.RestApiClient
             return await _service.HttpGetBytesAsync($"/api/rest/v1/asset-media-files/{Uri.EscapeDataString(mediaFileCode)}", ct).ConfigureAwait(false);
         }
 
+        /// <summary>Uploads an asset media file and returns the created file code from the response.</summary>
+        /// <param name="fileBytes">Raw file bytes.</param>
+        /// <param name="fileName">Original file name (e.g. <c>image.jpg</c>).</param>
+        /// <param name="contentType">MIME type (e.g. <c>image/jpeg</c>).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Response body string (contains the created file code).</returns>
+        public async Task<string> UploadAssetMediaFileAsync(byte[] fileBytes, string fileName, string contentType, CancellationToken ct = default)
+        {
+            return await _service.HttpPostMultipartAsync("/api/rest/v1/asset-media-files", "file", fileBytes, fileName, contentType, ct).ConfigureAwait(false);
+        }
+
         #endregion
 
         #region Asset

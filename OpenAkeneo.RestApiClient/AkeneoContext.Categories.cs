@@ -138,6 +138,29 @@ namespace OpenAkeneo.RestApiClient
             return await PatchAndFetchAsync(url, body, () => GetCategoryAsync(category.Code, ct: ct), ct).ConfigureAwait(false);
         }
 
+        /// <summary>Creates a new category via HTTP POST and returns the created entity.</summary>
+        /// <param name="category">The category to create.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The created <see cref="Category"/>.</returns>
+        public async Task<Category> CreateCategoryAsync(Category category, CancellationToken ct = default)
+        {
+            var url = "/api/rest/v1/categories";
+            var body = JsonSerializer.Serialize(category);
+            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
+            return AkeneoContextHelpers.DeserializeOrThrow<Category>(responseString, url);
+        }
+
+        /// <summary>Uploads a category media file and returns the created file code from the response.</summary>
+        /// <param name="fileBytes">Raw file bytes.</param>
+        /// <param name="fileName">Original file name (e.g. <c>banner.jpg</c>).</param>
+        /// <param name="contentType">MIME type (e.g. <c>image/jpeg</c>).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Response body string (typically the created file code).</returns>
+        public async Task<string> UploadCategoryMediaFileAsync(byte[] fileBytes, string fileName, string contentType, CancellationToken ct = default)
+        {
+            return await _service.HttpPostMultipartAsync("/api/rest/v1/category-media-files", "file", fileBytes, fileName, contentType, ct).ConfigureAwait(false);
+        }
+
         #endregion
 
     }

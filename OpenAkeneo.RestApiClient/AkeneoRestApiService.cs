@@ -516,6 +516,82 @@ namespace OpenAkeneo.RestApiClient
 
         #endregion
 
+        #region Put (string)
+
+        /// <summary>Performs an authenticated HTTP PUT with a JSON body.</summary>
+        /// <param name="url">Relative or absolute URL.</param>
+        /// <param name="content">JSON request body.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Response body string.</returns>
+        /// <exception cref="AkeneoApiException">Thrown on non-2xx status codes.</exception>
+        public async Task<string> HttpPutAsync(string url, string content, CancellationToken ct = default)
+        {
+            return await PerformRequestString(HttpMethod.Put, url, null, content, ct).ConfigureAwait(false);
+        }
+
+        #endregion
+
+        #region Post multipart (file upload)
+
+        /// <summary>Performs an authenticated HTTP POST with a multipart/form-data body for file uploads.</summary>
+        /// <param name="url">Relative or absolute URL.</param>
+        /// <param name="fieldName">The multipart field name for the file part.</param>
+        /// <param name="fileBytes">Raw file bytes to upload.</param>
+        /// <param name="fileName">Original file name sent in the Content-Disposition header.</param>
+        /// <param name="contentType">MIME type of the file (e.g. <c>image/jpeg</c>).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>Response body string (typically contains the created resource location or code).</returns>
+        /// <exception cref="AkeneoApiException">Thrown on non-2xx status codes.</exception>
+        public async Task<string> HttpPostMultipartAsync(string url, string fieldName, byte[] fileBytes, string fileName, string contentType, CancellationToken ct = default)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(url);
+
+            var requestUrl = url.StartsWith("http") ? url : _settings.RestApiUrl + url;
+
+            var token = await GetTokenAsync(ct: ct).ConfigureAwait(false);
+            using var response = await ExecuteMultipartWithPipelineAsync(requestUrl, fieldName, fileBytes, fileName, contentType, token, ct).ConfigureAwait(false);
+            _logger?.LogDebug("HTTP POST (multipart) {Url} → {StatusCode}", requestUrl, (int)response.StatusCode);
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                _logger?.LogWarning("Received 401 Unauthorized on multipart request, triggering token refresh for ClientId {ClientId}", _settings.ClientId);
+                token = await GetTokenAsync(forceRefresh: true, ct: ct).ConfigureAwait(false);
+                using var retryResponse = await ExecuteMultipartWithPipelineAsync(requestUrl, fieldName, fileBytes, fileName, contentType, token, ct).ConfigureAwait(false);
+                _logger?.LogDebug("HTTP POST (multipart) {Url} → {StatusCode} (after token refresh)", requestUrl, (int)retryResponse.StatusCode);
+                var (_, retryBody) = await ReadResponseAsync(retryResponse, "POST", requestUrl, ct).ConfigureAwait(false);
+                return retryBody;
+            }
+
+            var (__, body) = await ReadResponseAsync(response, "POST", requestUrl, ct).ConfigureAwait(false);
+            return body;
+        }
+
+        private async Task<HttpResponseMessage> ExecuteMultipartWithPipelineAsync(
+            string requestUrl,
+            string fieldName,
+            byte[] fileBytes,
+            string fileName,
+            string contentType,
+            string token,
+            CancellationToken ct)
+        {
+            return await _resiliencePipeline.ExecuteAsync(async ct2 =>
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+                var multipart = new MultipartFormDataContent();
+                var fileContent = new ByteArrayContent(fileBytes);
+                fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+                multipart.Add(fileContent, fieldName, fileName);
+                request.Content = multipart;
+
+                return await _httpClient.SendAsync(request, ct2).ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
+        }
+
+        #endregion
+
 
     }
 }
