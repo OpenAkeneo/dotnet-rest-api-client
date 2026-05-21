@@ -16,6 +16,10 @@ namespace OpenAkeneo.RestApiClient.Models
     }
 
     /// <summary>An Akeneo product attribute definition.</summary>
+    // NOTE: required string fields like Code use `= default!` because Akeneo guarantees they are
+    // always present. If Akeneo ever violates the contract and omits one, the null will surface as
+    // a NullReferenceException at point-of-use rather than at deserialization. If that becomes a
+    // real problem, add a post-deserialization guard that throws with context (field name + URL).
     public class AkeneoAttribute : HalItemInheritance
     {
 
@@ -218,7 +222,7 @@ namespace OpenAkeneo.RestApiClient.Models
         /// <summary>Unicode characters that are considered invalid for this attribute's values.</summary>
         [JsonPropertyName("invalid_characters_in_unicode")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? InvalidCharactersInUnicode { get; set; }
+        public List<string>? InvalidCharactersInUnicode { get; set; }
 
         /// <summary>Catch-all for extra JSON properties not mapped to a named member.</summary>
         [JsonExtensionData]

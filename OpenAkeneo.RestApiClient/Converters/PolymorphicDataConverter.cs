@@ -71,6 +71,12 @@ namespace OpenAkeneo.RestApiClient.Converters
                 return;
             }
 
+            // TODO: nested Dictionary<string,object?> values produced by Read() have runtime type
+            // `object`, which can throw NotSupportedException in .NET 8 when this converter is not
+            // registered on a shared JsonSerializerOptions. To fully fix round-tripping of
+            // polymorphic product values (metric, price, table) through a PATCH body, create a
+            // static shared JsonSerializerOptions with this converter registered globally and pass
+            // it to every JsonSerializer.Deserialize/Serialize call in the library.
             JsonSerializer.Serialize(writer, value, value.GetType(), options);
         }
     }

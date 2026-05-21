@@ -49,19 +49,14 @@ namespace OpenAkeneo.RestApiClient
         public string ConnectionUrl => _service.ConnectionUrl;
 
         /// <summary>
-        /// Sends a PATCH to <paramref name="url"/> with <paramref name="body"/>.
-        /// Akeneo returns 201 with the created resource on first creation, or 204 No Content on update.
-        /// When 201 is received the response body is deserialized directly, avoiding a stale-read from
-        /// an immediately following GET. When 204 is received <paramref name="fetchAsync"/> is called to
-        /// retrieve the current state.
+        /// Sends a PATCH to <paramref name="url"/> with <paramref name="body"/>, then fetches the
+        /// current state via <paramref name="fetchAsync"/>. Akeneo returns 201 on create or 204 on
+        /// update — in both cases the response body is not reliable (201 returns pre-patch state),
+        /// so a GET is always performed to return the definitive post-patch resource.
         /// </summary>
         internal async Task<T> PatchAndFetchAsync<T>(string url, string body, Func<Task<T>> fetchAsync, CancellationToken ct = default)
         {
-            var (statusCode, responseBody) = await _service.HttpPatchWithStatusAsync(url, body, ct).ConfigureAwait(false);
-
-            if (statusCode == HttpStatusCode.Created && !string.IsNullOrWhiteSpace(responseBody))
-                return JsonSerializer.Deserialize<T>(responseBody)!;
-
+            await _service.HttpPatchWithStatusAsync(url, body, ct).ConfigureAwait(false);
             return await fetchAsync().ConfigureAwait(false);
         }
     }

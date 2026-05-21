@@ -1,4 +1,6 @@
+using System;
 using System.Text.Json.Serialization;
+using OpenAkeneo.RestApiClient.Converters;
 
 namespace OpenAkeneo.RestApiClient.Models
 {
@@ -64,13 +66,15 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonPropertyName("user")]
         public string User { get; set; } = default!;
 
-        /// <summary>ISO 8601 timestamp when the execution started; <c>null</c> if not yet started.</summary>
+        /// <summary>Timestamp when the execution started; <c>null</c> if not yet started.</summary>
         [JsonPropertyName("started")]
-        public string? Started { get; set; }
+        [JsonConverter(typeof(AkeneoDateTimeOffsetConverter))]
+        public DateTimeOffset? Started { get; set; }
 
-        /// <summary>ISO 8601 timestamp when the execution finished; <c>null</c> if still running.</summary>
+        /// <summary>Timestamp when the execution finished; <c>null</c> if still running.</summary>
         [JsonPropertyName("stopped")]
-        public string? Stopped { get; set; }
+        [JsonConverter(typeof(AkeneoDateTimeOffsetConverter))]
+        public DateTimeOffset? Stopped { get; set; }
     }
 
     /// <summary>Detailed information about a completed job execution, including warning and error counts.</summary>

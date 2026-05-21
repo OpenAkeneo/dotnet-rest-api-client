@@ -26,7 +26,7 @@ namespace OpenAkeneo.RestApiClient
                     foreach (var item in partial.Products)
                         yield return item;
 
-                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Products == null || partial.Products.Count == 0)
+                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Products == null)
                     yield break;
             }
         }
@@ -139,10 +139,9 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>The created <see cref="ProductUuid"/>.</returns>
         public async Task<ProductUuid> CreateProductUuidAsync(ProductUuid product, CancellationToken ct = default)
         {
-            var url = "/api/rest/v1/products-uuid";
             var body = JsonSerializer.Serialize(product);
-            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
-            return AkeneoContextHelpers.DeserializeOrThrow<ProductUuid>(responseString, url);
+            await _service.HttpPostAsync("/api/rest/v1/products-uuid", body, ct).ConfigureAwait(false);
+            return await GetProductUuidAsync(product.Uuid!, ct).ConfigureAwait(false);
         }
 
         /// <summary>Deletes a UUID-based product.</summary>
@@ -192,7 +191,7 @@ namespace OpenAkeneo.RestApiClient
                     foreach (var item in partial.Products)
                         yield return item;
 
-                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Products == null || partial.Products.Count == 0)
+                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Products == null)
                     yield break;
             }
         }
@@ -305,10 +304,9 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>The created <see cref="ProductIdentifier"/>.</returns>
         public async Task<ProductIdentifier> CreateProductIdentifierAsync(ProductIdentifier product, CancellationToken ct = default)
         {
-            var url = "/api/rest/v1/products";
             var body = JsonSerializer.Serialize(product);
-            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
-            return AkeneoContextHelpers.DeserializeOrThrow<ProductIdentifier>(responseString, url);
+            await _service.HttpPostAsync("/api/rest/v1/products", body, ct).ConfigureAwait(false);
+            return await GetProductIdentifierAsync(product.Identifier, ct).ConfigureAwait(false);
         }
 
         /// <summary>Deletes an identifier-based product.</summary>
@@ -346,7 +344,7 @@ namespace OpenAkeneo.RestApiClient
                     foreach (var item in partial.ProductModels)
                         yield return item;
 
-                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.ProductModels == null || partial.ProductModels.Count == 0)
+                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.ProductModels == null)
                     yield break;
             }
         }
@@ -459,10 +457,9 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>The created <see cref="ProductModel"/>.</returns>
         public async Task<ProductModel> CreateProductModelAsync(ProductModel productModel, CancellationToken ct = default)
         {
-            var url = "/api/rest/v1/product-models";
             var body = JsonSerializer.Serialize(productModel);
-            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
-            return AkeneoContextHelpers.DeserializeOrThrow<ProductModel>(responseString, url);
+            await _service.HttpPostAsync("/api/rest/v1/product-models", body, ct).ConfigureAwait(false);
+            return await GetProductModelAsync(productModel.Code, ct).ConfigureAwait(false);
         }
 
         /// <summary>Deletes a product model by its code.</summary>
@@ -496,7 +493,7 @@ namespace OpenAkeneo.RestApiClient
                     foreach (var item in partial.MediaFiles)
                         yield return item;
 
-                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.MediaFiles == null || partial.MediaFiles.Count == 0)
+                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.MediaFiles == null)
                     yield break;
             }
         }

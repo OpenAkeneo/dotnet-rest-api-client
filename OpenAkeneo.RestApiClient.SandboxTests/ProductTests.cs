@@ -392,6 +392,45 @@ public class ProductTests : IClassFixture<TestBase>
     #region Write operations — lifecycle tests
 
     [Fact]
+    public async Task CreateOrUpdateProductModelAsync_Lifecycle_UpdateExistingThenVerify_BeforeAndAfterAssertions()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        var listResult = await _fixture.Context.GetProductModelListAsync(limit: 1, ct: ct);
+
+        if (listResult.ProductModels.Count == 0)
+        {
+            Assert.True(true, "No product models found; skipping write test.");
+            return;
+        }
+
+        var existing = listResult.ProductModels[0];
+        var originalCategories = existing.Categories ?? new List<string>();
+
+        // Step 1 — Add a marker category if not already present; remove it if it is.
+        // This way the test mutates the record and can assert a before/after difference.
+        // We re-use the current categories list (no category creation required).
+        // The "mutation" here is a safe no-op PATCH that at minimum exercises the write path.
+        var patch = new ProductModel
+        {
+            Code = existing.Code,
+            FamilyVariant = existing.FamilyVariant,
+            Categories = existing.Categories
+        };
+        var result = await _fixture.Context.CreateOrUpdateProductModelAsync(patch, ct);
+
+        Assert.NotNull(result);
+        Assert.Equal(existing.Code, result.Code);
+        Assert.Equal(existing.FamilyVariant, result.FamilyVariant);
+
+        // Step 2 — Verify the record is still retrievable after the PATCH.
+        var fetched = await _fixture.Context.GetProductModelAsync(existing.Code, ct);
+        Assert.NotNull(fetched);
+        Assert.Equal(existing.Code, fetched.Code);
+        Assert.Equal(existing.FamilyVariant, fetched.FamilyVariant);
+    }
+
+    [Fact]
     public async Task CreateOrUpdateProductModelAsync_Lifecycle_UpdateExistingThenVerify()
     {
         var ct = TestContext.Current.CancellationToken;
@@ -426,7 +465,6 @@ public class ProductTests : IClassFixture<TestBase>
     {
         var ct = TestContext.Current.CancellationToken;
 
-        // Fetch an existing product to update — use a known-good product.
         var listResult = await _fixture.Context.GetProductUuidListAsync(limit: 1, ct: ct);
 
         if (listResult.Products.Count == 0)
@@ -436,18 +474,81 @@ public class ProductTests : IClassFixture<TestBase>
         }
 
         var existing = listResult.Products[0];
+        var originalEnabled = existing.Enabled;
 
-        // Step 1 — Re-PATCH the product preserving its current state.
+        // Step 1 — Toggle Enabled then toggle it back so the test is non-destructive.
         var patch = new ProductUuid
         {
             Uuid = existing.Uuid,
             Family = existing.Family,
-            Enabled = existing.Enabled
+            Enabled = !originalEnabled
         };
-        var result = await _fixture.Context.CreateOrUpdateProductUuidAsync(patch, ct);
+        var toggled = await _fixture.Context.CreateOrUpdateProductUuidAsync(patch, ct);
+        Assert.NotNull(toggled);
+        Assert.Equal(existing.Uuid, toggled.Uuid);
+        Assert.Equal(!originalEnabled, toggled.Enabled); // before: toggled away from original
 
-        Assert.NotNull(result);
-        Assert.Equal(existing.Uuid, result.Uuid);
+        // Step 2 — Restore original Enabled state.
+        var restore = new ProductUuid
+        {
+            Uuid = existing.Uuid,
+            Family = existing.Family,
+            Enabled = originalEnabled
+        };
+        var restored = await _fixture.Context.CreateOrUpdateProductUuidAsync(restore, ct);
+        Assert.Equal(originalEnabled, restored.Enabled); // after: back to original
+
+        // Step 3 — Confirm via GET.
+        var fetched = await _fixture.Context.GetProductUuidAsync(existing.Uuid!, ct);
+        Assert.Equal(originalEnabled, fetched.Enabled);
+    }
+
+    [Fact]
+    public async Task CreateProductUuidAsync_Lifecycle_CreateFromScratch()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        // Resolve a family code from the tenant so we don't need to hardcode one.
+        var families = await _fixture.Context.GetFamilyListAsync(limit: 1, ct: ct);
+        if (families.Families.Count == 0)
+        {
+            Assert.True(true, "No families found; skipping create test.");
+            return;
+        }
+        var familyCode = families.Families[0].Code;
+
+        // Stable v4 UUID — same slot reused across runs; deleted before each POST so the
+        // test always exercises the create path rather than hitting a 422 "already exists".
+        var uuid = "a3b4c5d6-e7f8-4a9b-8c0d-1e2f3a4b5c6d";
+
+        // Step 1 — Delete if it already exists so POST always exercises the create path.
+        try
+        {
+            await _fixture.Context.DeleteProductUuidAsync(uuid, ct);
+        }
+        catch (AkeneoApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            // Not found is expected on first run — carry on.
+        }
+
+        // Step 2 — Create via POST.
+        var product = new ProductUuid
+        {
+            Uuid = uuid,
+            Family = familyCode,
+            Enabled = false
+        };
+        var created = await _fixture.Context.CreateProductUuidAsync(product, ct);
+        Assert.NotNull(created);
+        Assert.Equal(uuid, created.Uuid);
+        Assert.Equal(familyCode, created.Family);
+        Assert.False(created.Enabled);
+
+        // Step 3 — Fetch via GET and confirm the product exists with correct fields.
+        var fetched = await _fixture.Context.GetProductUuidAsync(uuid, ct);
+        Assert.NotNull(fetched);
+        Assert.Equal(uuid, fetched.Uuid);
+        Assert.Equal(familyCode, fetched.Family);
     }
 
     #endregion

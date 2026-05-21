@@ -65,4 +65,56 @@ public class ErrorParsingTests
 
         Assert.Equal("(empty response body)", ex.ApiMessage);
     }
+
+    [Fact]
+    public async Task ValidationError422_PopulatesFieldErrors()
+    {
+        // End-to-end test: a real 422 body flows through ParseAkeneoError and surfaces
+        // as typed FieldErrors on the exception — not just buried in ResponseBody.
+        const string body = """
+            {
+              "code": 422,
+              "message": "Validation failed.",
+              "errors": [
+                { "property": "values.name",  "message": "This value is too long." },
+                { "property": "values.price", "message": "This value must be a number." }
+              ]
+            }
+            """;
+
+        var handler = new FakeHttpHandler(
+            FakeHttpHandler.TokenResponse(),
+            FakeHttpHandler.Json(HttpStatusCode.UnprocessableEntity, body));
+
+        var svc = Helpers.BuildService(handler);
+        var ex = await Assert.ThrowsAsync<AkeneoApiException>(
+            () => svc.HttpPatchAsync("/api/rest/v1/products/p1", "{}", TestContext.Current.CancellationToken));
+
+        Assert.Equal("Validation failed.", ex.ApiMessage);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, ex.StatusCode);
+        Assert.NotNull(ex.FieldErrors);
+        Assert.Equal(2, ex.FieldErrors!.Count);
+        Assert.Equal("values.name",  ex.FieldErrors[0].Property);
+        Assert.Equal("This value is too long.", ex.FieldErrors[0].Message);
+        Assert.Equal("values.price", ex.FieldErrors[1].Property);
+        Assert.Equal("This value must be a number.", ex.FieldErrors[1].Message);
+    }
+
+    [Fact]
+    public async Task ValidationError422_NoErrorsArray_FieldErrorsIsNull()
+    {
+        // Some 422s from Akeneo omit the errors array entirely.
+        const string body = """{"code":422,"message":"Validation failed."}""";
+
+        var handler = new FakeHttpHandler(
+            FakeHttpHandler.TokenResponse(),
+            FakeHttpHandler.Json(HttpStatusCode.UnprocessableEntity, body));
+
+        var svc = Helpers.BuildService(handler);
+        var ex = await Assert.ThrowsAsync<AkeneoApiException>(
+            () => svc.HttpPatchAsync("/api/rest/v1/products/p1", "{}", TestContext.Current.CancellationToken));
+
+        Assert.Equal("Validation failed.", ex.ApiMessage);
+        Assert.Null(ex.FieldErrors);
+    }
 }

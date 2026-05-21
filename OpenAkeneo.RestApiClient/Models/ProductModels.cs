@@ -43,15 +43,17 @@ namespace OpenAkeneo.RestApiClient.Models
         public Dictionary<string, List<ProductValue>>? Values { get; set; }
 
         // Server-managed — omit from write payloads
-        /// <summary>ISO 8601 timestamp of when the product was created. Server-managed; omit from write payloads.</summary>
+        /// <summary>Timestamp of when the product was created. Server-managed; omit from write payloads.</summary>
         [JsonPropertyName("created")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? Created { get; set; }
+        [JsonConverter(typeof(AkeneoDateTimeOffsetConverter))]
+        public DateTimeOffset? Created { get; set; }
 
-        /// <summary>ISO 8601 timestamp of the last update. Server-managed; omit from write payloads.</summary>
+        /// <summary>Timestamp of the last update. Server-managed; omit from write payloads.</summary>
         [JsonPropertyName("updated")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? Updated { get; set; }
+        [JsonConverter(typeof(AkeneoDateTimeOffsetConverter))]
+        public DateTimeOffset? Updated { get; set; }
 
         /// <summary>Product associations grouped by association type code.</summary>
         [JsonPropertyName("associations")]
@@ -169,15 +171,17 @@ namespace OpenAkeneo.RestApiClient.Models
         public Dictionary<string, List<ProductValue>>? Values { get; set; }
 
         // Server-managed — omit from write payloads
-        /// <summary>ISO 8601 timestamp of when the product model was created. Server-managed; omit from write payloads.</summary>
+        /// <summary>Timestamp of when the product model was created. Server-managed; omit from write payloads.</summary>
         [JsonPropertyName("created")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? Created { get; set; }
+        [JsonConverter(typeof(AkeneoDateTimeOffsetConverter))]
+        public DateTimeOffset? Created { get; set; }
 
-        /// <summary>ISO 8601 timestamp of the last update. Server-managed; omit from write payloads.</summary>
+        /// <summary>Timestamp of the last update. Server-managed; omit from write payloads.</summary>
         [JsonPropertyName("updated")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? Updated { get; set; }
+        [JsonConverter(typeof(AkeneoDateTimeOffsetConverter))]
+        public DateTimeOffset? Updated { get; set; }
 
         /// <summary>Product associations grouped by association type code.</summary>
         [JsonPropertyName("associations")]
@@ -229,7 +233,7 @@ namespace OpenAkeneo.RestApiClient.Models
 
         /// <summary>File size in bytes.</summary>
         [JsonPropertyName("size")]
-        public int Size { get; set; }
+        public long Size { get; set; }
 
         /// <summary>File extension without the leading dot (e.g. <c>jpg</c>).</summary>
         [JsonPropertyName("extension")]
@@ -397,6 +401,7 @@ namespace OpenAkeneo.RestApiClient.Models
     }
 
     /// <summary>Completeness percentage for a product in a specific channel and locale.</summary>
+    // TODO: modern Akeneo SaaS may add ratio/required_count/missing_count fields — extend if needed.
     public class ProductCompleteness
     {
 
@@ -410,7 +415,7 @@ namespace OpenAkeneo.RestApiClient.Models
 
         /// <summary>Completeness percentage (0–100).</summary>
         [JsonPropertyName("data")]
-        public int Data { get; set; }
+        public int? Data { get; set; }
 
     }
 

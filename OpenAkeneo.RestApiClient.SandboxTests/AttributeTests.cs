@@ -6,6 +6,9 @@ public class AttributeTests : IClassFixture<TestBase>
 
     private const string AttributeCode = "accessories_care_instructions";
 
+    // Dedicated test attribute — prefixed so it's clearly test data on the tenant.
+    private const string OpenAkeneoAttributeCode = "openakeneo_test_text_attribute";
+
     public AttributeTests(TestBase fixture)
     {
         _fixture = fixture;
@@ -63,4 +66,53 @@ public class AttributeTests : IClassFixture<TestBase>
         Assert.NotNull(result.Group);
         Assert.NotEmpty(result.Group);
     }
+
+
+    #region Write operations — lifecycle test
+
+    [Fact]
+    public async Task CreateOrUpdateAttributeAsync_Lifecycle_CreateThenUpdateThenVerify()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        // Step 1 — Create (or overwrite) a dedicated text attribute.
+        var attribute = new Models.AkeneoAttribute
+        {
+            Code = OpenAkeneoAttributeCode,
+            Type = "pim_catalog_text",
+            Group = "other",
+            Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Text Attribute" }
+        };
+        var createResult = await _fixture.Context.CreateOrUpdateAttributeAsync(attribute, ct);
+        Assert.NotNull(createResult);
+        Assert.Equal(OpenAkeneoAttributeCode, createResult.Code);
+        Assert.Equal("pim_catalog_text", createResult.Type);
+        Assert.Equal("(OpenAkeneo) Test Text Attribute", createResult.Labels?["en_US"]);
+
+        // Step 2 — Verify the attribute is retrievable via GET.
+        var fetched = await _fixture.Context.GetAttributeAsync(OpenAkeneoAttributeCode, ct);
+        Assert.NotNull(fetched);
+        Assert.Equal(OpenAkeneoAttributeCode, fetched.Code);
+        Assert.Equal("pim_catalog_text", fetched.Type);
+        Assert.Equal("(OpenAkeneo) Test Text Attribute", fetched.Labels?["en_US"]);
+
+        // Step 3 — Update the label and verify the change is reflected.
+        var updated = new Models.AkeneoAttribute
+        {
+            Code = OpenAkeneoAttributeCode,
+            Type = "pim_catalog_text",
+            Group = "other",
+            Labels = new Dictionary<string, string> { ["en_US"] = "(OpenAkeneo) Test Text Attribute Updated" }
+        };
+        var updateResult = await _fixture.Context.CreateOrUpdateAttributeAsync(updated, ct);
+        Assert.NotNull(updateResult);
+        Assert.Equal(OpenAkeneoAttributeCode, updateResult.Code);
+        Assert.Equal("(OpenAkeneo) Test Text Attribute Updated", updateResult.Labels?["en_US"]);
+
+        // Step 4 — Confirm the update persisted by fetching again.
+        var fetchedAfterUpdate = await _fixture.Context.GetAttributeAsync(OpenAkeneoAttributeCode, ct);
+        Assert.Equal("(OpenAkeneo) Test Text Attribute Updated", fetchedAfterUpdate.Labels?["en_US"]);
+    }
+
+    #endregion
 }

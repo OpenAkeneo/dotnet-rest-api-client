@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenAkeneo.RestApiClient.Converters;
@@ -29,7 +30,8 @@ namespace OpenAkeneo.RestApiClient.Models
         /// <summary>Timestamp of the last update. Ignored on write when null.</summary>
         [JsonPropertyName("updated")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public DateTime? Updated { get; set; }
+        [JsonConverter(typeof(AkeneoDateTimeOffsetConverter))]
+        public DateTimeOffset? Updated { get; set; }
 
         /// <summary>Position of this category relative to its siblings in the tree.</summary>
         [JsonPropertyName("position")]

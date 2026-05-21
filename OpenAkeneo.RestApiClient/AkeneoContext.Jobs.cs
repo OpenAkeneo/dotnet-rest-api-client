@@ -20,7 +20,7 @@ namespace OpenAkeneo.RestApiClient
                     foreach (var item in partial.Jobs)
                         yield return item;
 
-                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Jobs == null || partial.Jobs.Count == 0)
+                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Jobs == null)
                     yield break;
             }
         }
@@ -93,7 +93,7 @@ namespace OpenAkeneo.RestApiClient
                     foreach (var item in partial.JobExecutions)
                         yield return item;
 
-                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.JobExecutions == null || partial.JobExecutions.Count == 0)
+                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.JobExecutions == null)
                     yield break;
             }
         }

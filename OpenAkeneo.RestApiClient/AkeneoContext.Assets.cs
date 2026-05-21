@@ -221,7 +221,7 @@ namespace OpenAkeneo.RestApiClient
                     foreach (var item in partial.Assets)
                         yield return item;
 
-                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Assets == null || partial.Assets.Count == 0)
+                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Assets == null)
                     yield break;
             }
         }

@@ -191,9 +191,9 @@ namespace OpenAkeneo.RestApiClient
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-                var apiMessage = TryParseAkeneoError(body);
+                var (apiMessage, fieldErrors) = ParseAkeneoError(body);
                 _logger?.LogError("API error {StatusCode} for {Method} {Url}: {ApiMessage}", (int)response.StatusCode, method, requestUrl, apiMessage);
-                throw new AkeneoApiException(requestUrl, method, response.StatusCode, apiMessage, body);
+                throw new AkeneoApiException(requestUrl, method, response.StatusCode, apiMessage, body, fieldErrors: fieldErrors);
             }
 
             return (response.StatusCode, await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false));
@@ -226,33 +226,54 @@ namespace OpenAkeneo.RestApiClient
             if (!response.IsSuccessStatusCode)
             {
                 var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-                var apiMessage = TryParseAkeneoError(body);
+                var (apiMessage, fieldErrors) = ParseAkeneoError(body);
                 _logger?.LogError("API error {StatusCode} for GET {Url}: {ApiMessage}", (int)response.StatusCode, requestUrl, apiMessage);
-                throw new AkeneoApiException(requestUrl, "GET", response.StatusCode, apiMessage, body);
+                throw new AkeneoApiException(requestUrl, "GET", response.StatusCode, apiMessage, body, fieldErrors: fieldErrors);
             }
 
             return await response.Content.ReadAsByteArrayAsync(ct).ConfigureAwait(false);
         }
 
         /// <summary>
-        /// Attempts to extract a human-readable error message from an Akeneo API response body.
-        /// Returns the <c>"message"</c> field from a well-formed Akeneo JSON error object, or
-        /// the raw body string (truncated to 500 characters) if parsing fails.
+        /// Parses a human-readable error message and optional per-field validation errors from
+        /// an Akeneo API response body. Handles the standard Akeneo JSON error envelope:
+        /// <c>{"code": 422, "message": "...", "errors": [{"property": "...", "message": "..."}]}</c>
         /// </summary>
-        private static string TryParseAkeneoError(string body)
+        private static (string message, IReadOnlyList<AkeneoFieldError>? fieldErrors) ParseAkeneoError(string body)
         {
             if (string.IsNullOrWhiteSpace(body))
-                return "(empty response body)";
+                return ("(empty response body)", null);
 
             try
             {
                 var json = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(body);
-                if (json != null && json.TryGetValue("message", out var msg))
-                    return msg.GetString() ?? body;
+                if (json == null)
+                    return (body.Length > 500 ? body[..500] + "…" : body, null);
+
+                var message = json.TryGetValue("message", out var msg)
+                    ? msg.GetString() ?? body
+                    : body.Length > 500 ? body[..500] + "…" : body;
+
+                IReadOnlyList<AkeneoFieldError>? fieldErrors = null;
+                if (json.TryGetValue("errors", out var errorsEl) && errorsEl.ValueKind == JsonValueKind.Array)
+                {
+                    var list = new List<AkeneoFieldError>();
+                    foreach (var item in errorsEl.EnumerateArray())
+                    {
+                        list.Add(new AkeneoFieldError
+                        {
+                            Property = item.TryGetProperty("property", out var prop) ? prop.GetString() : null,
+                            Message  = item.TryGetProperty("message",  out var m)    ? m.GetString()    : null,
+                        });
+                    }
+                    if (list.Count > 0) fieldErrors = list;
+                }
+
+                return (message, fieldErrors);
             }
             catch (JsonException) { }
 
-            return body.Length > 500 ? body[..500] + "…" : body;
+            return (body.Length > 500 ? body[..500] + "…" : body, null);
         }
 
         #endregion

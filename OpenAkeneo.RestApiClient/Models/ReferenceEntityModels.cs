@@ -176,15 +176,17 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? ReferenceEntityCode { get; set; }
 
-        /// <summary>Timestamp of when this record was created. Server-managed; omit from write payloads.</summary>
+        /// <summary>Timestamp of when this record was created (Unix epoch seconds). Server-managed; omit from write payloads.</summary>
         [JsonPropertyName("created")]
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public DateTime Created { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(EpochSecondsConverter))]
+        public DateTimeOffset? Created { get; set; }
 
-        /// <summary>Timestamp of the last update. Server-managed; omit from write payloads.</summary>
+        /// <summary>Timestamp of the last update (Unix epoch seconds). Server-managed; omit from write payloads.</summary>
         [JsonPropertyName("updated")]
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-        public DateTime Updated { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(EpochSecondsConverter))]
+        public DateTimeOffset? Updated { get; set; }
 
         /// <summary>Attribute values keyed by attribute code; each entry is a list of locale/channel-specific values.</summary>
         [JsonPropertyName("values")]

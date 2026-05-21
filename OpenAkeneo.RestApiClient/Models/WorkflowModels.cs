@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -134,9 +135,10 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonPropertyName("status")]
         public string Status { get; set; } = default!;
 
-        /// <summary>ISO 8601 timestamp of when the task was created.</summary>
+        /// <summary>Timestamp of when the task was created.</summary>
         [JsonPropertyName("created_at")]
-        public string CreatedAt { get; set; } = default!;
+        [JsonConverter(typeof(AkeneoDateTimeOffsetConverter))]
+        public DateTimeOffset? CreatedAt { get; set; }
 
         /// <summary>The product this task is associated with, if applicable.</summary>
         [JsonPropertyName("product")]

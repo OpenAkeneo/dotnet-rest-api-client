@@ -104,14 +104,12 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(ProductUuidJson("new-uuid")));
+            FakeHttpHandler.Created(""),                          // POST → 201 empty body (real Akeneo behaviour)
+            FakeHttpHandler.Ok(ProductUuidJson("new-uuid")));     // GET → product
 
         var ctx = Helpers.BuildContext(handler);
         var result = await ctx.CreateProductUuidAsync(new ProductUuid { Uuid = "new-uuid" }, CT);
 
-        var req = handler.LastApiRequest!;
-        Assert.Equal(HttpMethod.Post, req.Method);
-        Assert.EndsWith("/products-uuid", req.RequestUri);
         Assert.Equal("new-uuid", result.Uuid);
     }
 
@@ -172,14 +170,12 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(ProductIdentifierJson("SKU-NEW")));
+            FakeHttpHandler.Created(""),                              // POST → 201 empty body
+            FakeHttpHandler.Ok(ProductIdentifierJson("SKU-NEW")));   // GET → product
 
         var ctx = Helpers.BuildContext(handler);
         var result = await ctx.CreateProductIdentifierAsync(new ProductIdentifier { Identifier = "SKU-NEW" }, CT);
 
-        var req = handler.LastApiRequest!;
-        Assert.Equal(HttpMethod.Post, req.Method);
-        Assert.EndsWith("/products", req.RequestUri);
         Assert.Equal("SKU-NEW", result.Identifier);
     }
 
@@ -222,14 +218,12 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(ProductModelJson("model-new")));
+            FakeHttpHandler.Created(""),                           // POST → 201 empty body
+            FakeHttpHandler.Ok(ProductModelJson("model-new")));   // GET → model
 
         var ctx = Helpers.BuildContext(handler);
         var result = await ctx.CreateProductModelAsync(new ProductModel { Code = "model-new", Family = "clothes", FamilyVariant = "clothes_size" }, CT);
 
-        var req = handler.LastApiRequest!;
-        Assert.Equal(HttpMethod.Post, req.Method);
-        Assert.EndsWith("/product-models", req.RequestUri);
         Assert.Equal("model-new", result.Code);
     }
 
@@ -667,15 +661,17 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(ProductUuidJson("p1")));
+            FakeHttpHandler.Created(""),                       // POST → 201 empty body
+            FakeHttpHandler.Ok(ProductUuidJson("p1")));        // GET → product
 
         var ctx = Helpers.BuildContext(handler);
         await ctx.CreateProductUuidAsync(new ProductUuid { Uuid = "p1", Enabled = true, Family = "clothes" }, CT);
 
-        var req = handler.LastApiRequest!;
-        Assert.Equal("application/json", req.ContentType);
-        Assert.Contains("\"uuid\"", req.Body);
-        Assert.Contains("\"family\"", req.Body);
+        // Inspect the POST request (second request, index 1 after token)
+        var postReq = handler.Captured[1];
+        Assert.Equal("application/json", postReq.ContentType);
+        Assert.Contains("\"uuid\"", postReq.Body);
+        Assert.Contains("\"family\"", postReq.Body);
     }
 
     [Fact]

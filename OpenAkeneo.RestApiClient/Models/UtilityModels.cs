@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using OpenAkeneo.RestApiClient.Converters;
 
 namespace OpenAkeneo.RestApiClient.Models
 {
@@ -36,11 +37,11 @@ namespace OpenAkeneo.RestApiClient.Models
     {
         /// <summary>Indicates whether the user can view this scope.</summary>
         [JsonPropertyName("canView")]
-        public string? CanView { get; set; }
+        public bool? CanView { get; set; }
 
         /// <summary>Indicates whether the user can edit this scope.</summary>
         [JsonPropertyName("canEdit")]
-        public string? CanEdit { get; set; }
+        public bool? CanEdit { get; set; }
     }
 
     #endregion
@@ -150,9 +151,10 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonPropertyName("author")]
         public string? Author { get; set; }
 
-        /// <summary>ISO 8601 timestamp of when the suggestion was created.</summary>
+        /// <summary>Timestamp of when the suggestion was created.</summary>
         [JsonPropertyName("created_at")]
-        public string? CreatedAt { get; set; }
+        [JsonConverter(typeof(AkeneoDateTimeOffsetConverter))]
+        public DateTimeOffset? CreatedAt { get; set; }
 
         /// <summary>Raw list of attributes suggested by the AI agent.</summary>
         [JsonPropertyName("raw_suggested_attributes")]

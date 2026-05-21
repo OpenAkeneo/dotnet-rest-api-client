@@ -25,7 +25,7 @@ namespace OpenAkeneo.RestApiClient
                     foreach (var item in partial.Workflows)
                         yield return item;
 
-                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Workflows == null || partial.Workflows.Count == 0)
+                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Workflows == null)
                     yield break;
             }
         }
@@ -104,7 +104,7 @@ namespace OpenAkeneo.RestApiClient
                     foreach (var item in partial.Assignees)
                         yield return item;
 
-                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Assignees == null || partial.Assignees.Count == 0)
+                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Assignees == null)
                     yield break;
             }
         }
@@ -174,7 +174,7 @@ namespace OpenAkeneo.RestApiClient
                     foreach (var item in partial.Tasks)
                         yield return item;
 
-                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Tasks == null || partial.Tasks.Count == 0)
+                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Tasks == null)
                     yield break;
             }
         }

@@ -252,15 +252,17 @@ namespace OpenAkeneo.RestApiClient.Models
         public Dictionary<string, List<AssetValue>>? Values { get; set; }
 
         // Server-managed — omit from write payloads
-        /// <summary>ISO 8601 timestamp of when the asset was created. Server-managed; omit from write payloads.</summary>
+        /// <summary>Timestamp of when the asset was created. Server-managed; omit from write payloads.</summary>
         [JsonPropertyName("created")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? Created { get; set; }
+        [JsonConverter(typeof(AkeneoDateTimeOffsetConverter))]
+        public DateTimeOffset? Created { get; set; }
 
-        /// <summary>ISO 8601 timestamp of the last update. Server-managed; omit from write payloads.</summary>
+        /// <summary>Timestamp of the last update. Server-managed; omit from write payloads.</summary>
         [JsonPropertyName("updated")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? Updated { get; set; }
+        [JsonConverter(typeof(AkeneoDateTimeOffsetConverter))]
+        public DateTimeOffset? Updated { get; set; }
 
         /// <summary>Catch-all for extra JSON properties not mapped to a named member.</summary>
         [JsonExtensionData]
@@ -348,9 +350,10 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonPropertyName("original_filename")]
         public string? OriginalFilename { get; set; }
 
-        /// <summary>ISO 8601 timestamp of the last update.</summary>
+        /// <summary>Timestamp of the last update.</summary>
         [JsonPropertyName("updated_at")]
-        public string? UpdatedAt { get; set; }
+        [JsonConverter(typeof(AkeneoDateTimeOffsetConverter))]
+        public DateTimeOffset? UpdatedAt { get; set; }
 
     }
 

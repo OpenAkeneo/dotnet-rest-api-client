@@ -1,7 +1,18 @@
+using System.Collections.Generic;
 using System.Net;
 
 namespace OpenAkeneo.RestApiClient
 {
+    /// <summary>A single per-field validation error returned by Akeneo in a 422 response.</summary>
+    public class AkeneoFieldError
+    {
+        /// <summary>The attribute or property that failed validation.</summary>
+        public string? Property { get; init; }
+
+        /// <summary>Human-readable description of the validation failure.</summary>
+        public string? Message { get; init; }
+    }
+
     /// <summary>
     /// Exception thrown by <see cref="AkeneoRestApiService"/> when the Akeneo API
     /// returns a non-success HTTP response, or when a response cannot be parsed.
@@ -32,6 +43,12 @@ namespace OpenAkeneo.RestApiClient
         public IReadOnlyDictionary<string, string>? ResponseHeaders { get; }
 
         /// <summary>
+        /// Per-field validation errors from a 422 response. Non-null and non-empty only when
+        /// Akeneo returned a structured <c>"errors"</c> array (e.g. attribute validation failures).
+        /// </summary>
+        public IReadOnlyList<AkeneoFieldError>? FieldErrors { get; }
+
+        /// <summary>
         /// Initialises a new <see cref="AkeneoApiException"/>.
         /// </summary>
         /// <param name="requestUrl">The URL that returned the error.</param>
@@ -40,6 +57,7 @@ namespace OpenAkeneo.RestApiClient
         /// <param name="apiMessage">The error message from the response body.</param>
         /// <param name="responseBody">The full, untruncated response body (optional).</param>
         /// <param name="responseHeaders">Selected response headers (optional).</param>
+        /// <param name="fieldErrors">Per-field validation errors (optional).</param>
         /// <param name="innerException">Inner exception, if any.</param>
         public AkeneoApiException(
             string requestUrl,
@@ -48,6 +66,7 @@ namespace OpenAkeneo.RestApiClient
             string apiMessage,
             string? responseBody = null,
             IReadOnlyDictionary<string, string>? responseHeaders = null,
+            IReadOnlyList<AkeneoFieldError>? fieldErrors = null,
             Exception? innerException = null)
             : base($"Akeneo API error {(int)statusCode} ({statusCode}) on '{requestMethod} {requestUrl}': {apiMessage}", innerException)
         {
@@ -57,6 +76,7 @@ namespace OpenAkeneo.RestApiClient
             ApiMessage = apiMessage;
             ResponseBody = responseBody;
             ResponseHeaders = responseHeaders;
+            FieldErrors = fieldErrors;
         }
     }
 }
