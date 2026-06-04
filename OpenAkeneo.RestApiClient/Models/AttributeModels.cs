@@ -92,6 +92,7 @@ namespace OpenAkeneo.RestApiClient.Models
         /// <summary>Whether the WYSIWYG editor is enabled for textarea attributes.</summary>
         [JsonPropertyName("wysiwyg_enabled")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(NullableBoolFromStringConverter))]
         public bool? WysiwygEnabled { get; set; }
 
         /// <summary>Minimum numeric value (number/metric attributes only).</summary>
@@ -107,11 +108,13 @@ namespace OpenAkeneo.RestApiClient.Models
         /// <summary>Whether decimal values are allowed (number/metric attributes only).</summary>
         [JsonPropertyName("decimals_allowed")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(NullableBoolFromStringConverter))]
         public bool? DecimalsAllowed { get; set; }
 
         /// <summary>Whether negative values are allowed (number/metric attributes only).</summary>
         [JsonPropertyName("negative_allowed")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(NullableBoolFromStringConverter))]
         public bool? NegativeAllowed { get; set; }
 
         /// <summary>Measurement family code (metric attributes only).</summary>
@@ -152,6 +155,7 @@ namespace OpenAkeneo.RestApiClient.Models
         /// <summary>Default boolean value (yes/no attributes only).</summary>
         [JsonPropertyName("default_value")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(NullableBoolFromStringConverter))]
         public bool? DefaultValue { get; set; }
 
         /// <summary>Column definitions for table attributes.</summary>
@@ -180,6 +184,7 @@ namespace OpenAkeneo.RestApiClient.Models
         /// <summary>Whether new options can be created on the fly during import.</summary>
         [JsonPropertyName("enable_option_creation_during_import")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(NullableBoolFromStringConverter))]
         public bool? EnableOptionCreationDuringImport { get; set; }
 
         /// <summary>Maximum number of items selectable in a multi-select or collection attribute.</summary>
@@ -202,21 +207,25 @@ namespace OpenAkeneo.RestApiClient.Models
         /// <summary>Whether options are sorted automatically in alphabetical order.</summary>
         [JsonPropertyName("auto_option_sorting")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(NullableBoolFromStringConverter))]
         public bool? AutoOptionSorting { get; set; }
 
         /// <summary>Whether HTML tags are stripped from the stored text value.</summary>
         [JsonPropertyName("remove_html_tags")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(NullableBoolFromStringConverter))]
         public bool? RemoveHtmlTags { get; set; }
 
         /// <summary>Whether the attribute value is read-only and cannot be modified via the API.</summary>
         [JsonPropertyName("is_read_only")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(NullableBoolFromStringConverter))]
         public bool? IsReadOnly { get; set; }
 
         /// <summary>Whether the time portion is shown for date-time attributes.</summary>
         [JsonPropertyName("display_time")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(NullableBoolFromStringConverter))]
         public bool? DisplayTime { get; set; }
 
         /// <summary>Unicode characters that are considered invalid for this attribute's values.</summary>

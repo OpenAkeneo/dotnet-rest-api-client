@@ -80,11 +80,13 @@ namespace OpenAkeneo.RestApiClient.Models
         /// <summary>Whether the text attribute renders as a multi-line textarea.</summary>
         [JsonPropertyName("is_textarea")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(NullableBoolFromStringConverter))]
         public bool? IsTextarea { get; set; }
 
         /// <summary>Whether the textarea renders a rich-text (WYSIWYG) editor.</summary>
         [JsonPropertyName("is_rich_text_editor")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(NullableBoolFromStringConverter))]
         public bool? IsRichTextEditor { get; set; }
 
         /// <summary>Validation rule applied to text values (e.g. <c>email</c>, <c>url</c>, <c>regexp</c>).</summary>
@@ -100,6 +102,7 @@ namespace OpenAkeneo.RestApiClient.Models
         /// <summary>Whether decimal values are allowed (number attributes only).</summary>
         [JsonPropertyName("decimals_allowed")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(NullableBoolFromStringConverter))]
         public bool? DecimalsAllowed { get; set; }
 
         /// <summary>Minimum numeric value (number/metric attributes only).</summary>
