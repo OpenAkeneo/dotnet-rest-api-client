@@ -196,6 +196,12 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? AssetFamilyCode { get; set; }
 
+        /// <summary>Default value for the attribute. Type varies: <c>bool</c> for boolean, option code <c>string</c> for single/multiple option, numeric <c>string</c> for number. See <see href="https://api.akeneo.com/api-reference.html#get_asset_family__asset_family_code__attributes"/>.</summary>
+        [JsonPropertyName("default_value")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [JsonConverter(typeof(PolymorphicDataConverter))]
+        public object? DefaultValue { get; set; }
+
         /// <summary>Catch-all for extra JSON properties not mapped to a named member.</summary>
         [JsonExtensionData]
         public Dictionary<string, JsonElement>? ExtensionData { get; set; }

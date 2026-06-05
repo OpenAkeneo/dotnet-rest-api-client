@@ -80,53 +80,18 @@ namespace OpenAkeneo.RestApiClient
             return AkeneoContextHelpers.DeserializeOrThrow<ApiOverview>(responseString, url);
         }
 
-        /// <summary>Streams all UI extensions registered in Akeneo, following HAL pagination automatically.</summary>
-        /// <param name="ct">Cancellation token.</param>
-        /// <returns>An async stream of <see cref="Extension"/> objects.</returns>
-        public async IAsyncEnumerable<Extension> StreamExtensionsAsync([EnumeratorCancellation] CancellationToken ct = default)
-        {
-            int page = 1;
-            while (true)
-            {
-                var partial = await GetExtensionListAsync(page, 100, ct).ConfigureAwait(false);
-                if (partial.Extensions == null || partial.Extensions.Count == 0)
-                    yield break;
-                foreach (var ext in partial.Extensions)
-                    yield return ext;
-                if (partial.Links?.Next == null)
-                    yield break;
-                page++;
-            }
-        }
-
-        /// <summary>Returns all UI extensions registered in Akeneo as a materialised list.</summary>
+        /// <summary>
+        /// Returns all UI extensions associated with the current token.
+        /// Unlike most Akeneo list endpoints, <c>GET /ui-extensions</c> is not paginated and
+        /// returns a bare JSON array, so this method returns the full list directly.
+        /// </summary>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>A list of all <see cref="Extension"/> objects.</returns>
-        public async Task<List<Extension>> GetExtensionListFullAsync(CancellationToken ct = default)
+        public async Task<List<Extension>> GetExtensionListAsync(CancellationToken ct = default)
         {
-            var list = new List<Extension>();
-            await foreach (var ext in StreamExtensionsAsync(ct))
-                list.Add(ext);
-            return list;
-        }
-
-        /// <summary>Returns a page of UI extensions registered in Akeneo.</summary>
-        /// <param name="page">1-based page number.</param>
-        /// <param name="limit">Items per page (1–100).</param>
-        /// <param name="ct">Cancellation token.</param>
-        /// <returns>An <see cref="ExtensionList"/> with HAL navigation links.</returns>
-        public async Task<ExtensionList> GetExtensionListAsync(int page = 1, int limit = 100, CancellationToken ct = default)
-        {
-            var url = $"/api/rest/v1/extensions?page={page}&limit={limit}";
+            var url = "/api/rest/v1/ui-extensions";
             var responseString = await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
-            var responseJson = AkeneoContextHelpers.DeserializeOrThrow<HalResponse>(responseString, url);
-
-            var result = new ExtensionList { Links = responseJson.Links };
-
-            if (responseJson.Embedded != null && responseJson.Embedded.TryGetValue("items", out var itemsElement))
-                result.Extensions = itemsElement.EnumerateArray().Select(x => x.Deserialize<Extension>()!).ToList();
-
-            return result;
+            return AkeneoContextHelpers.DeserializeOrThrow<List<Extension>>(responseString, url);
         }
 
         /// <summary>Returns a page of Data Architect modelization suggestions.</summary>
@@ -136,7 +101,7 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>A <see cref="ModelizationSuggestionList"/> with HAL navigation links.</returns>
         public async Task<ModelizationSuggestionList> GetModelizationSuggestionListAsync(int page = 1, int limit = 100, CancellationToken ct = default)
         {
-            var url = $"/api/rest/v1/data-model-designer/modelization-suggestion?page={page}&limit={limit}";
+            var url = $"/api/rest/v1/data-model-designer/modelization-suggestions?page={page}&limit={limit}";
             var responseString = await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
             var responseJson = AkeneoContextHelpers.DeserializeOrThrow<HalResponse>(responseString, url);
 

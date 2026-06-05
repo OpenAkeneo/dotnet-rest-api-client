@@ -206,15 +206,16 @@ namespace OpenAkeneo.RestApiClient
             return await _service.HttpGetAsync($"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/mapped-models?page={page}&limit={limit}", ct).ConfigureAwait(false);
         }
 
-        /// <summary>Returns a raw JSON string of mapped product variants for a catalog.</summary>
+        /// <summary>Returns a raw JSON string of mapped variants of a product model for a catalog.</summary>
         /// <param name="catalogId">The catalog UUID.</param>
+        /// <param name="modelCode">The product model code whose variants to retrieve.</param>
         /// <param name="page">1-based page number.</param>
         /// <param name="limit">Items per page (1–100).</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Raw JSON response string.</returns>
-        public async Task<string> GetCatalogMappedVariantListAsync(string catalogId, int page = 1, int limit = 100, CancellationToken ct = default)
+        public async Task<string> GetCatalogMappedVariantListAsync(string catalogId, string modelCode, int page = 1, int limit = 100, CancellationToken ct = default)
         {
-            return await _service.HttpGetAsync($"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/mapped-variants?page={page}&limit={limit}", ct).ConfigureAwait(false);
+            return await _service.HttpGetAsync($"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/mapped-models/{Uri.EscapeDataString(modelCode)}/variants?page={page}&limit={limit}", ct).ConfigureAwait(false);
         }
 
         /// <summary>Returns the product mapping schema defined for a catalog.</summary>

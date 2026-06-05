@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenAkeneo.RestApiClient.Converters;
 
@@ -80,52 +81,42 @@ namespace OpenAkeneo.RestApiClient.Models
 
     #region Extensions
 
-    /// <summary>An Akeneo App Store extension (connected app or bundle).</summary>
+    /// <summary>
+    /// A UI extension registered with the current token, as returned by <c>GET /ui-extensions</c>.
+    /// </summary>
     public class Extension
     {
-        /// <summary>Unique UUID of the extension.</summary>
-        [JsonPropertyName("id")]
-        public string? Id { get; set; }
-
-        /// <summary>Unique code identifying the extension.</summary>
-        [JsonPropertyName("code")]
-        public string? Code { get; set; }
-
-        /// <summary>Human-readable name of the extension.</summary>
+        /// <summary>Name of the extension, shown within the Administration interface.</summary>
         [JsonPropertyName("name")]
         public string? Name { get; set; }
 
-        /// <summary>Extension type (e.g. <c>app</c>).</summary>
+        /// <summary>Short human-readable description, shown within the Administration interface.</summary>
+        [JsonPropertyName("description")]
+        public string? Description { get; set; }
+
+        /// <summary>Version of the extension, shown within the Administration interface.</summary>
+        [JsonPropertyName("version")]
+        public string? Version { get; set; }
+
+        /// <summary>Position of the extension (e.g. <c>pim.product.tab</c>).</summary>
+        [JsonPropertyName("position")]
+        public string? Position { get; set; }
+
+        /// <summary>Type of the extension (e.g. <c>iframe</c>).</summary>
         [JsonPropertyName("type")]
         public string? Type { get; set; }
-    }
 
-    /// <summary>Paginated list of extensions.</summary>
-    public class ExtensionList : HalBaseInheritance
-    {
-        /// <summary>Raw embedded payload from the HAL response.</summary>
-        [JsonPropertyName("_embedded")]
-        public EmbeddedExtensionList? Embedded { get; set; }
+        /// <summary>Type-specific configuration options for the extension.</summary>
+        [JsonPropertyName("configuration")]
+        public Dictionary<string, JsonElement>? Configuration { get; set; }
 
-        /// <summary>Convenience accessor that unwraps the embedded extension items.</summary>
-        [JsonIgnore]
-        public List<Extension> Extensions
-        {
-            get => Embedded?.Items ?? new List<Extension>();
-            set
-            {
-                if (Embedded == null) Embedded = new EmbeddedExtensionList();
-                Embedded.Items = value;
-            }
-        }
-    }
+        /// <summary>Status of the extension (<c>active</c> or <c>inactive</c>).</summary>
+        [JsonPropertyName("status")]
+        public string? Status { get; set; }
 
-    /// <summary>Embedded wrapper for a list of extensions within a HAL response.</summary>
-    public class EmbeddedExtensionList
-    {
-        /// <summary>Extension items contained in this embedded wrapper.</summary>
-        [JsonPropertyName("items")]
-        public List<Extension>? Items { get; set; }
+        /// <summary>Credentials registered for the extension.</summary>
+        [JsonPropertyName("credentials")]
+        public List<JsonElement>? Credentials { get; set; }
     }
 
     #endregion

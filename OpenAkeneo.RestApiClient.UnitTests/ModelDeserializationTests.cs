@@ -55,30 +55,6 @@ public class ModelDeserializationTests
     #region AkeneoAttribute
 
     [Fact]
-    public void AkeneoAttribute_DefaultValue_DeserializesFromBoolString()
-    {
-        const string json = """
-            {
-                "code": "is_new",
-                "type": "pim_catalog_boolean",
-                "sort_order": 0,
-                "localizable": false,
-                "scopable": false,
-                "unique": false,
-                "useable_as_grid_filter": false,
-                "default_value": "true",
-                "is_main_identifier": false,
-                "is_mandatory": false
-            }
-            """;
-
-        var result = JsonSerializer.Deserialize<AkeneoAttribute>(json);
-
-        Assert.NotNull(result);
-        Assert.True(result.DefaultValue);
-    }
-
-    [Fact]
     public void AkeneoAttribute_DefaultValue_DeserializesFromBool()
     {
         const string json = """
@@ -99,7 +75,31 @@ public class ModelDeserializationTests
         var result = JsonSerializer.Deserialize<AkeneoAttribute>(json);
 
         Assert.NotNull(result);
-        Assert.False(result.DefaultValue);
+        Assert.Equal(false, result.DefaultValue);
+    }
+
+    [Fact]
+    public void AkeneoAttribute_DefaultValue_DeserializesFromOptionCodeString()
+    {
+        const string json = """
+            {
+                "code": "condition",
+                "type": "pim_catalog_simpleselect",
+                "sort_order": 0,
+                "localizable": false,
+                "scopable": false,
+                "unique": false,
+                "useable_as_grid_filter": false,
+                "default_value": "new",
+                "is_main_identifier": false,
+                "is_mandatory": false
+            }
+            """;
+
+        var result = JsonSerializer.Deserialize<AkeneoAttribute>(json);
+
+        Assert.NotNull(result);
+        Assert.Equal("new", result.DefaultValue);
     }
 
     #endregion

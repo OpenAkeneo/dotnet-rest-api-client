@@ -152,11 +152,11 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? ReferenceDataName { get; set; }
 
-        /// <summary>Default boolean value (yes/no attributes only).</summary>
+        /// <summary>Default value for the attribute. Type varies by attribute type: <c>bool</c>, <c>number</c>, <c>string</c>, or array of strings. See <see href="https://api.akeneo.com/api-reference.html#get_attributes"/>.</summary>
         [JsonPropertyName("default_value")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonConverter(typeof(NullableBoolFromStringConverter))]
-        public bool? DefaultValue { get; set; }
+        [JsonConverter(typeof(PolymorphicDataConverter))]
+        public object? DefaultValue { get; set; }
 
         /// <summary>Column definitions for table attributes.</summary>
         [JsonPropertyName("table_configuration")]
