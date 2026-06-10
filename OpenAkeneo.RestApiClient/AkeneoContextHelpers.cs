@@ -17,6 +17,16 @@ namespace OpenAkeneo.RestApiClient
         }
 
         /// <summary>
+        /// Validates that <paramref name="limit"/> is between 1 and 100 (inclusive).
+        /// Used by endpoints that paginate via <c>search_after</c> and have no page number.
+        /// </summary>
+        internal static void ValidateLimit(int limit)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit, nameof(limit));
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(limit, 100, nameof(limit));
+        }
+
+        /// <summary>
         /// Builds a URL query string (including the leading '?') from a dictionary of parameters.
         /// Returns an empty string when the dictionary is null or empty.
         /// </summary>

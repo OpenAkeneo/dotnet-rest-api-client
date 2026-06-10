@@ -33,6 +33,20 @@ Akeneo does not publish an official .NET SDK. The options available are either o
 
 ---
 
+## AI & LLM Integration
+
+Are you using an AI coding assistant (like GitHub Copilot, Cursor, or Claude) to help you build with `OpenAkeneo.RestApiClient`? We have prepared highly optimized, compact markdown representations of the Akeneo REST API specifically designed to be read by LLMs.
+
+You can provide the following RAW links directly to your AI assistant to give it full context on the API endpoints, methods, and request/response schemas available:
+
+- **[OpenAkeneo.RestApiClient.ApiReference.md](https://raw.githubusercontent.com/OpenAkeneo/dotnet-rest-api-client/main/OpenAkeneo.RestApiClient.ApiReference.md)**: The full, compact API specification.
+- **[OpenAkeneo.RestApiClient.ApiIndex.md](https://raw.githubusercontent.com/OpenAkeneo/dotnet-rest-api-client/main/OpenAkeneo.RestApiClient.ApiIndex.md)**: An index containing exact line numbers and summaries for each endpoint within the reference.
+
+**Prompt Example:**
+> "Read the API index at `https://raw.githubusercontent.com/OpenAkeneo/dotnet-rest-api-client/main/OpenAkeneo.RestApiClient.ApiIndex.md` to find the endpoints I need to update a product, then read the relevant lines from the API Reference at `https://raw.githubusercontent.com/OpenAkeneo/dotnet-rest-api-client/main/OpenAkeneo.RestApiClient.ApiReference.md` and write the C# code using `OpenAkeneo.RestApiClient`."
+
+---
+
 ## Installation
 
 ```bash
@@ -721,10 +735,6 @@ var fileCode = await context.UploadAssetMediaFileAsync(fileBytes, "photo.jpg", "
 ### Jobs
 
 ```csharp
-// List available jobs
-var jobs = await context.GetJobListFullAsync();
-var job  = await context.GetJobAsync("csv_product_export");
-
 // Launch export
 var result = await context.LaunchExportJobAsync("csv_product_export");
 Console.WriteLine($"Launched job execution #{result.JobExecutionId}");
@@ -734,14 +744,6 @@ var dryRun = await context.LaunchExportJobAsync("csv_product_export", isDryRun: 
 
 // Launch import
 var importResult = await context.LaunchImportJobAsync("csv_product_import");
-
-// Poll execution status
-var execution = await context.GetJobExecutionAsync(result.JobExecutionId);
-Console.WriteLine($"Status: {execution.Status}");
-
-// Browse execution history
-await foreach (var exec in context.StreamJobExecutionsAsync())
-    Console.WriteLine($"{exec.JobLabel} — {exec.Status}");
 ```
 
 ---
@@ -791,9 +793,11 @@ await foreach (var product in context.StreamCatalogProductsAsync("my-catalog-id"
 var product = await context.GetCatalogProductAsync("my-catalog-id", "product-uuid");
 
 // Mapped products (returns raw JSON string — use when catalog has a product mapping configured)
+// These endpoints paginate via search_after only: pass the cursor from the response's
+// `next` link to fetch the following page (the `page` parameter is not supported).
 var mappedJson   = await context.GetCatalogMappedProductListAsync("my-catalog-id");
 var mappedModels = await context.GetCatalogMappedModelListAsync("my-catalog-id");
-var mappedVars   = await context.GetCatalogMappedVariantListAsync("my-catalog-id");
+var mappedVars   = await context.GetCatalogMappedVariantListAsync("my-catalog-id", "my-model-code");
 
 // Mapping schema
 var schema = await context.GetCatalogMappingSchemaAsync("my-catalog-id");
@@ -832,9 +836,10 @@ var overview = await context.GetApiOverviewAsync();
 var channelPerms = await context.GetUserChannelsPermissionsAsync("user-uuid");
 var localePerms  = await context.GetUserLocalesPermissionsAsync("user-uuid");
 
-// Extensions
-await foreach (var ext in context.StreamExtensionsAsync())
-    Console.WriteLine(ext.Code);
+// Extensions (GET /ui-extensions is not paginated; returns the full list)
+var extensions = await context.GetExtensionListAsync();
+foreach (var ext in extensions)
+    Console.WriteLine(ext.Name);
 
 // Modelization suggestions
 var suggestions = await context.GetModelizationSuggestionListAsync();

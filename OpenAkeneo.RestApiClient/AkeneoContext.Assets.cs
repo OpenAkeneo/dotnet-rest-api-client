@@ -214,14 +214,19 @@ namespace OpenAkeneo.RestApiClient
         /// <param name="ct">Cancellation token.</param>
         public async IAsyncEnumerable<Asset> StreamAssetsAsync(string assetFamilyCode, string? search = null, string? searchAfter = null, [EnumeratorCancellation] CancellationToken ct = default)
         {
-            for (int page = 1; ; page++)
+            string? cursor = searchAfter;
+            while (true)
             {
-                var partial = await GetAssetListAsync(assetFamilyCode, page, 100, search, searchAfter, ct).ConfigureAwait(false);
+                var partial = await GetAssetListAsync(assetFamilyCode, 100, search, cursor, ct).ConfigureAwait(false);
                 if (partial.Assets != null)
                     foreach (var item in partial.Assets)
                         yield return item;
 
                 if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Assets == null)
+                    yield break;
+
+                cursor = ExtractAssetSearchAfter(partial.Links.Next.Href);
+                if (string.IsNullOrEmpty(cursor))
                     yield break;
             }
         }
@@ -241,20 +246,19 @@ namespace OpenAkeneo.RestApiClient
         }
 
         /// <summary>Returns a single page of assets for a given family.</summary>
+        /// <remarks>The Akeneo assets endpoint paginates only via <c>search_after</c>; there is no page-number pagination.</remarks>
         /// <param name="assetFamilyCode">The asset family code.</param>
-        /// <param name="page">1-based page number.</param>
         /// <param name="limit">Items per page (1–100).</param>
         /// <param name="search">Optional JSON-encoded search filter.</param>
-        /// <param name="searchAfter">Cursor for keyset pagination.</param>
+        /// <param name="searchAfter">Cursor for keyset pagination (use the value from the previous page's <c>next</c> link).</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>A paginated <see cref="AssetList"/> with HAL navigation links.</returns>
-        public async Task<AssetList> GetAssetListAsync(string assetFamilyCode, int page = 1, int limit = 100, string? search = null, string? searchAfter = null, CancellationToken ct = default)
+        public async Task<AssetList> GetAssetListAsync(string assetFamilyCode, int limit = 100, string? search = null, string? searchAfter = null, CancellationToken ct = default)
         {
-            AkeneoContextHelpers.ValidatePagination(page, limit);
+            AkeneoContextHelpers.ValidateLimit(limit);
 
             var queryParameters = new Dictionary<string, string>
             {
-                ["page"] = page.ToString(),
                 ["limit"] = limit.ToString()
             };
 

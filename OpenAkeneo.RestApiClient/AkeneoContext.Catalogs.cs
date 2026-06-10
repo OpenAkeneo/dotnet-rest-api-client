@@ -70,13 +70,15 @@ namespace OpenAkeneo.RestApiClient
 
         /// <summary>Returns a page of product UUIDs belonging to a catalog.</summary>
         /// <param name="catalogId">The catalog UUID.</param>
-        /// <param name="page">1-based page number.</param>
         /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="searchAfter">Cursor for keyset pagination. This endpoint paginates only via <c>search_after</c>.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>A <see cref="CatalogProductUuidList"/> with HAL navigation links.</returns>
-        public async Task<CatalogProductUuidList> GetCatalogProductUuidListAsync(string catalogId, int page = 1, int limit = 100, CancellationToken ct = default)
+        public async Task<CatalogProductUuidList> GetCatalogProductUuidListAsync(string catalogId, int limit = 100, string? searchAfter = null, CancellationToken ct = default)
         {
-            var url = $"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/product-uuids?page={page}&limit={limit}";
+            var url = $"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/product-uuids?limit={limit}";
+            if (!string.IsNullOrEmpty(searchAfter))
+                url += $"&search_after={Uri.EscapeDataString(searchAfter)}";
             var responseString = await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
             var responseJson = AkeneoContextHelpers.DeserializeOrThrow<HalResponse>(responseString, url);
 
@@ -90,13 +92,15 @@ namespace OpenAkeneo.RestApiClient
 
         /// <summary>Returns a page of full product objects belonging to a catalog.</summary>
         /// <param name="catalogId">The catalog UUID.</param>
-        /// <param name="page">1-based page number.</param>
         /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="searchAfter">Cursor for keyset pagination. This endpoint paginates only via <c>search_after</c>.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>A <see cref="ProductUuidList"/> with HAL navigation links.</returns>
-        public async Task<ProductUuidList> GetCatalogProductListAsync(string catalogId, int page = 1, int limit = 100, CancellationToken ct = default)
+        public async Task<ProductUuidList> GetCatalogProductListAsync(string catalogId, int limit = 100, string? searchAfter = null, CancellationToken ct = default)
         {
-            var url = $"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/products?page={page}&limit={limit}";
+            var url = $"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/products?limit={limit}";
+            if (!string.IsNullOrEmpty(searchAfter))
+                url += $"&search_after={Uri.EscapeDataString(searchAfter)}";
             var responseString = await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
             var responseJson = AkeneoContextHelpers.DeserializeOrThrow<HalResponse>(responseString, url);
 
@@ -114,17 +118,19 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>An async stream of product UUID strings.</returns>
         public async IAsyncEnumerable<string> StreamCatalogProductUuidsAsync(string catalogId, [EnumeratorCancellation] CancellationToken ct = default)
         {
-            int page = 1;
+            string? cursor = null;
             while (true)
             {
-                var partial = await GetCatalogProductUuidListAsync(catalogId, page, 100, ct).ConfigureAwait(false);
+                var partial = await GetCatalogProductUuidListAsync(catalogId, 100, cursor, ct).ConfigureAwait(false);
                 if (partial.Uuids == null || partial.Uuids.Count == 0)
                     yield break;
                 foreach (var uuid in partial.Uuids)
                     yield return uuid;
-                if (partial.Links?.Next == null)
+                if (string.IsNullOrEmpty(partial.Links?.Next?.Href))
                     yield break;
-                page++;
+                cursor = ExtractSearchAfter(partial.Links.Next.Href);
+                if (string.IsNullOrEmpty(cursor))
+                    yield break;
             }
         }
 
@@ -146,17 +152,19 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>An async stream of <see cref="ProductUuid"/> objects.</returns>
         public async IAsyncEnumerable<ProductUuid> StreamCatalogProductsAsync(string catalogId, [EnumeratorCancellation] CancellationToken ct = default)
         {
-            int page = 1;
+            string? cursor = null;
             while (true)
             {
-                var partial = await GetCatalogProductListAsync(catalogId, page, 100, ct).ConfigureAwait(false);
+                var partial = await GetCatalogProductListAsync(catalogId, 100, cursor, ct).ConfigureAwait(false);
                 if (partial.Products == null || partial.Products.Count == 0)
                     yield break;
                 foreach (var product in partial.Products)
                     yield return product;
-                if (partial.Links?.Next == null)
+                if (string.IsNullOrEmpty(partial.Links?.Next?.Href))
                     yield break;
-                page++;
+                cursor = ExtractSearchAfter(partial.Links.Next.Href);
+                if (string.IsNullOrEmpty(cursor))
+                    yield break;
             }
         }
 
@@ -185,37 +193,52 @@ namespace OpenAkeneo.RestApiClient
         }
 
         /// <summary>Returns a raw JSON string of mapped products for a catalog. The schema depends on the catalog's mapping configuration.</summary>
+        /// <remarks>This endpoint paginates only via <c>search_after</c>; extract the cursor from the response's <c>next</c> link.</remarks>
         /// <param name="catalogId">The catalog UUID.</param>
-        /// <param name="page">1-based page number.</param>
         /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="searchAfter">Cursor for keyset pagination.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Raw JSON response string.</returns>
-        public async Task<string> GetCatalogMappedProductListAsync(string catalogId, int page = 1, int limit = 100, CancellationToken ct = default)
+        public async Task<string> GetCatalogMappedProductListAsync(string catalogId, int limit = 100, string? searchAfter = null, CancellationToken ct = default)
         {
-            return await _service.HttpGetAsync($"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/mapped-products?page={page}&limit={limit}", ct).ConfigureAwait(false);
+            AkeneoContextHelpers.ValidateLimit(limit);
+            var url = $"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/mapped-products?limit={limit}";
+            if (!string.IsNullOrEmpty(searchAfter))
+                url += $"&search_after={Uri.EscapeDataString(searchAfter)}";
+            return await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
         }
 
         /// <summary>Returns a raw JSON string of mapped product models for a catalog.</summary>
+        /// <remarks>This endpoint paginates only via <c>search_after</c>; extract the cursor from the response's <c>next</c> link.</remarks>
         /// <param name="catalogId">The catalog UUID.</param>
-        /// <param name="page">1-based page number.</param>
         /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="searchAfter">Cursor for keyset pagination.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Raw JSON response string.</returns>
-        public async Task<string> GetCatalogMappedModelListAsync(string catalogId, int page = 1, int limit = 100, CancellationToken ct = default)
+        public async Task<string> GetCatalogMappedModelListAsync(string catalogId, int limit = 100, string? searchAfter = null, CancellationToken ct = default)
         {
-            return await _service.HttpGetAsync($"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/mapped-models?page={page}&limit={limit}", ct).ConfigureAwait(false);
+            AkeneoContextHelpers.ValidateLimit(limit);
+            var url = $"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/mapped-models?limit={limit}";
+            if (!string.IsNullOrEmpty(searchAfter))
+                url += $"&search_after={Uri.EscapeDataString(searchAfter)}";
+            return await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
         }
 
         /// <summary>Returns a raw JSON string of mapped variants of a product model for a catalog.</summary>
+        /// <remarks>This endpoint paginates only via <c>search_after</c>; extract the cursor from the response's <c>next</c> link.</remarks>
         /// <param name="catalogId">The catalog UUID.</param>
         /// <param name="modelCode">The product model code whose variants to retrieve.</param>
-        /// <param name="page">1-based page number.</param>
         /// <param name="limit">Items per page (1–100).</param>
+        /// <param name="searchAfter">Cursor for keyset pagination.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Raw JSON response string.</returns>
-        public async Task<string> GetCatalogMappedVariantListAsync(string catalogId, string modelCode, int page = 1, int limit = 100, CancellationToken ct = default)
+        public async Task<string> GetCatalogMappedVariantListAsync(string catalogId, string modelCode, int limit = 100, string? searchAfter = null, CancellationToken ct = default)
         {
-            return await _service.HttpGetAsync($"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/mapped-models/{Uri.EscapeDataString(modelCode)}/variants?page={page}&limit={limit}", ct).ConfigureAwait(false);
+            AkeneoContextHelpers.ValidateLimit(limit);
+            var url = $"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/mapped-models/{Uri.EscapeDataString(modelCode)}/variants?limit={limit}";
+            if (!string.IsNullOrEmpty(searchAfter))
+                url += $"&search_after={Uri.EscapeDataString(searchAfter)}";
+            return await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
         }
 
         /// <summary>Returns the product mapping schema defined for a catalog.</summary>
