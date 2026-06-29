@@ -146,6 +146,26 @@ public class AssetTests : IClassFixture<TestBase>
     #endregion
 
 
+    #region Media file upload
+
+    [Fact]
+    public async Task UploadAssetMediaFileAsync_ReturnsNonEmptyCode()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        // Minimal 1×1 transparent PNG (67 bytes) — no external file dependency.
+        var png1x1 = Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
+
+        var code = await _fixture.Context.UploadAssetMediaFileAsync(png1x1, "openakeneo_test.png", "image/png", ct);
+
+        Assert.False(string.IsNullOrWhiteSpace(code), $"Expected a non-empty file code but got: '{code}'");
+        Assert.EndsWith("openakeneo_test.png", code);
+    }
+
+    #endregion
+
+
     #region Write operations — lifecycle test
 
     [Fact]

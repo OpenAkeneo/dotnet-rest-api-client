@@ -79,20 +79,21 @@ public class NewEndpointTests
     // -------------------------------------------------------------------------
 
     [Fact]
-    public async Task HttpPostMultipartAsync_SendsMultipartPost()
+    public async Task HttpPostMultipartAsync_SendsMultipartPost_ReturnsCodeFromLocationHeader()
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(""));
+            FakeHttpHandler.CreatedWithLocation("/api/rest/v1/media-files/3/b/5/a/3b5a8cphoto.jpg"));
 
         var svc = Helpers.BuildService(handler);
         var bytes = "fake-image-data"u8.ToArray();
-        await svc.HttpPostMultipartAsync("/api/rest/v1/media-files", "file", bytes, "photo.jpg", "image/jpeg", CT);
+        var code = await svc.HttpPostMultipartAsync("/api/rest/v1/media-files", "file", bytes, "photo.jpg", "image/jpeg", CT);
 
         var req = handler.LastApiRequest!;
         Assert.Equal(HttpMethod.Post, req.Method);
         Assert.Contains("/api/rest/v1/media-files", req.RequestUri);
         Assert.StartsWith("multipart/form-data", req.ContentType);
+        Assert.Equal("3/b/5/a/3b5a8cphoto.jpg", code);
     }
 
     // -------------------------------------------------------------------------
@@ -262,19 +263,20 @@ public class NewEndpointTests
     // -------------------------------------------------------------------------
 
     [Fact]
-    public async Task UploadProductMediaFileAsync_PostsMultipartToMediaFiles()
+    public async Task UploadProductMediaFileAsync_PostsMultipartToMediaFiles_ReturnsCodeFromLocationHeader()
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(""));
+            FakeHttpHandler.CreatedWithLocation("/api/rest/v1/media-files/3/b/5/a/3b5a8cphoto.jpg"));
 
         var ctx = Helpers.BuildContext(handler);
-        await ctx.UploadProductMediaFileAsync("data"u8.ToArray(), "photo.jpg", "image/jpeg", ct: CT);
+        var code = await ctx.UploadProductMediaFileAsync("data"u8.ToArray(), "photo.jpg", "image/jpeg", ct: CT);
 
         var req = handler.LastApiRequest!;
         Assert.Equal(HttpMethod.Post, req.Method);
         Assert.EndsWith("/media-files", req.RequestUri);
         Assert.StartsWith("multipart/form-data", req.ContentType);
+        Assert.Equal("3/b/5/a/3b5a8cphoto.jpg", code);
     }
 
     // -------------------------------------------------------------------------
@@ -584,19 +586,20 @@ public class NewEndpointTests
     // -------------------------------------------------------------------------
 
     [Fact]
-    public async Task UploadAssetMediaFileAsync_PostsMultipartToAssetMediaFiles()
+    public async Task UploadAssetMediaFileAsync_PostsMultipartToAssetMediaFiles_ReturnsCodeFromLocationHeader()
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(""));
+            FakeHttpHandler.CreatedWithLocation("/api/rest/v1/asset-media-files/3/b/5/a/3b5a8cimage.jpg"));
 
         var ctx = Helpers.BuildContext(handler);
-        await ctx.UploadAssetMediaFileAsync("data"u8.ToArray(), "image.jpg", "image/jpeg", CT);
+        var code = await ctx.UploadAssetMediaFileAsync("data"u8.ToArray(), "image.jpg", "image/jpeg", CT);
 
         var req = handler.LastApiRequest!;
         Assert.Equal(HttpMethod.Post, req.Method);
         Assert.EndsWith("/asset-media-files", req.RequestUri);
         Assert.StartsWith("multipart/form-data", req.ContentType);
+        Assert.Equal("3/b/5/a/3b5a8cimage.jpg", code);
     }
 
     // -------------------------------------------------------------------------

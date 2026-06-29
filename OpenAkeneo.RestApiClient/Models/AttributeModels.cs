@@ -266,6 +266,13 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonPropertyName("is_required_for_completeness")]
         public bool IsRequiredForCompleteness { get; set; }
 
+        /// <summary>
+        /// Catch-all for column keys not explicitly mapped above (e.g. <c>reference_data_name</c>).
+        /// Captured on deserialize and re-emitted on serialize so they round-trip unchanged.
+        /// </summary>
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+
     }
 
     #endregion

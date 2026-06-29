@@ -288,7 +288,17 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonPropertyName("channel")]
         public string? Channel { get; set; }
 
-        /// <summary>The raw attribute value; shape depends on the attribute type.</summary>
+        /// <summary>
+        /// The raw attribute value. Runtime type depends on the asset attribute type:
+        /// <list type="bullet">
+        ///   <item><description><c>text</c>, <c>single_option</c>, <c>media_file</c> — <see cref="string"/> (text content, option code, or media file code respectively)</description></item>
+        ///   <item><description><c>multiple_options</c> — <see cref="System.Collections.Generic.List{T}"/> of <see cref="string"/> (option codes)</description></item>
+        ///   <item><description><c>number</c> — <see cref="long"/>, <see cref="double"/>, or <see cref="decimal"/> depending on the value</description></item>
+        ///   <item><description><c>boolean</c> — <see cref="bool"/></description></item>
+        /// </list>
+        /// For <c>media_file</c> values, <see cref="Links"/> contains download URLs and <see cref="LinkedData"/> contains file metadata.
+        /// Use <see cref="GetData{T}"/> to deserialize into a typed model.
+        /// </summary>
         [JsonPropertyName("data")]
         [JsonConverter(typeof(PolymorphicDataConverter))]
         public object? Data { get; set; }

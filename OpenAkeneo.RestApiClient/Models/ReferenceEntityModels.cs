@@ -130,6 +130,11 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? ReferenceEntityCode { get; set; }
 
+        /// <summary>Code of the asset family this attribute links to. Required when <see cref="Type"/> is <c>asset_collection</c>.</summary>
+        [JsonPropertyName("reference_data_name")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? ReferenceDataName { get; set; }
+
     }
 
     #endregion
@@ -213,13 +218,14 @@ namespace OpenAkeneo.RestApiClient.Models
         /// <summary>
         /// The raw attribute value. Runtime type depends on the reference entity attribute type:
         /// <list type="bullet">
-        ///   <item><description><c>text</c>, <c>single_option</c>, <c>image</c> — <see cref="string"/></description></item>
-        ///   <item><description><c>multiple_options</c> — <see cref="System.Collections.Generic.List{T}"/> of <see cref="string"/></description></item>
+        ///   <item><description><c>text</c>, <c>text_area</c>, <c>single_option</c>, <c>image</c> — <see cref="string"/></description></item>
+        ///   <item><description><c>multiple_options</c> — <see cref="System.Collections.Generic.List{T}"/> of <see cref="string"/> (option codes)</description></item>
         ///   <item><description><c>number</c> — <see cref="long"/>, <see cref="double"/>, or <see cref="decimal"/> depending on the value</description></item>
-        ///   <item><description><c>yes_no</c> (boolean) — <see cref="bool"/></description></item>
-        ///   <item><description><c>record</c>, <c>record_collection</c> — <see cref="string"/> or <see cref="System.Collections.Generic.List{T}"/> of <see cref="string"/> (record codes)</description></item>
+        ///   <item><description><c>yes_no</c> — <see cref="bool"/></description></item>
+        ///   <item><description><c>reference_entity_single_link</c> — <see cref="string"/> (record code)</description></item>
+        ///   <item><description><c>reference_entity_multiple_links</c> — <see cref="System.Collections.Generic.List{T}"/> of <see cref="string"/> (record codes)</description></item>
         /// </list>
-        /// Use <see cref="GetData{T}"/> to deserialize into a typed model, e.g. <c>GetData&lt;MetricValue&gt;()</c> for metric values.
+        /// Use <see cref="GetData{T}"/> to deserialize into a typed model.
         /// </summary>
         [JsonPropertyName("data")]
         [JsonConverter(typeof(PolymorphicDataConverter))]

@@ -77,6 +77,13 @@ internal sealed class FakeHttpHandler : HttpMessageHandler
     internal static HttpResponseMessage Created(string json = "{}")
         => Json(HttpStatusCode.Created, json);
 
+    internal static HttpResponseMessage CreatedWithLocation(string location)
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.Created);
+        response.Headers.Location = new Uri(location, UriKind.RelativeOrAbsolute);
+        return response;
+    }
+
     internal static HttpResponseMessage NoContent()
         => new(HttpStatusCode.NoContent);
 }

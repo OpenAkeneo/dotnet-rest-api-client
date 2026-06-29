@@ -561,7 +561,7 @@ namespace OpenAkeneo.RestApiClient
         /// <param name="fileName">Original file name sent in the Content-Disposition header.</param>
         /// <param name="contentType">MIME type of the file (e.g. <c>image/jpeg</c>).</param>
         /// <param name="ct">Cancellation token.</param>
-        /// <returns>Response body string (typically contains the created resource location or code).</returns>
+        /// <returns>The media file code extracted from the <c>Location</c> response header (e.g. <c>3/b/5/a/3b5a8c...filename.png</c>).</returns>
         /// <exception cref="AkeneoApiException">Thrown on non-2xx status codes.</exception>
         public async Task<string> HttpPostMultipartAsync(string url, string fieldName, byte[] fileBytes, string fileName, string contentType, CancellationToken ct = default)
         {
@@ -579,12 +579,39 @@ namespace OpenAkeneo.RestApiClient
                 token = await GetTokenAsync(forceRefresh: true, ct: ct).ConfigureAwait(false);
                 using var retryResponse = await ExecuteMultipartWithPipelineAsync(requestUrl, fieldName, fileBytes, fileName, contentType, token, ct).ConfigureAwait(false);
                 _logger?.LogDebug("HTTP POST (multipart) {Url} → {StatusCode} (after token refresh)", requestUrl, (int)retryResponse.StatusCode);
-                var (_, retryBody) = await ReadResponseAsync(retryResponse, "POST", requestUrl, ct).ConfigureAwait(false);
-                return retryBody;
+                await ReadResponseAsync(retryResponse, "POST", requestUrl, ct).ConfigureAwait(false);
+                return ExtractCodeFromLocationHeader(retryResponse, requestUrl);
             }
 
-            var (__, body) = await ReadResponseAsync(response, "POST", requestUrl, ct).ConfigureAwait(false);
-            return body;
+            await ReadResponseAsync(response, "POST", requestUrl, ct).ConfigureAwait(false);
+            return ExtractCodeFromLocationHeader(response, requestUrl);
+        }
+
+        // Akeneo's POST /api/rest/v1/asset-media-files and /api/rest/v1/media-files return 201 with an
+        // empty body; the created file code lives in the Location header as the last path segment.
+        private string ExtractCodeFromLocationHeader(HttpResponseMessage response, string requestUrl)
+        {
+            var location = response.Headers.Location?.ToString();
+            if (string.IsNullOrEmpty(location))
+            {
+                _logger?.LogWarning("POST multipart {Url} returned no Location header; returning empty code", requestUrl);
+                return string.Empty;
+            }
+
+            // Location: /api/rest/v1/asset-media-files/3/b/5/a/3b5a8c...filename.png
+            // Strip the well-known API prefix so the remainder is the opaque file code.
+            const string prefix = "/api/rest/v1/asset-media-files/";
+            const string productPrefix = "/api/rest/v1/media-files/";
+
+            if (location.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return location[prefix.Length..];
+
+            if (location.StartsWith(productPrefix, StringComparison.OrdinalIgnoreCase))
+                return location[productPrefix.Length..];
+
+            // Fallback: strip up to and including the first segment of the path that looks like a base URL.
+            var lastSlash = location.LastIndexOf('/');
+            return lastSlash >= 0 ? location[(lastSlash + 1)..] : location;
         }
 
         private async Task<HttpResponseMessage> ExecuteMultipartWithPipelineAsync(
