@@ -130,10 +130,10 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? ReferenceEntityCode { get; set; }
 
-        /// <summary>Code of the asset family this attribute links to. Required when <see cref="Type"/> is <c>asset_collection</c>.</summary>
-        [JsonPropertyName("reference_data_name")]
+        /// <summary>Code of the asset family this attribute links to. Only present for <c>asset_collection</c> attribute types.</summary>
+        [JsonPropertyName("asset_family_identifier")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-        public string? ReferenceDataName { get; set; }
+        public string? AssetFamilyIdentifier { get; set; }
 
     }
 
