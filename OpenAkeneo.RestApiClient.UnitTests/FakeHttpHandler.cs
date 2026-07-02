@@ -86,4 +86,16 @@ internal sealed class FakeHttpHandler : HttpMessageHandler
 
     internal static HttpResponseMessage NoContent()
         => new(HttpStatusCode.NoContent);
+
+    /// <summary>201 carrying the bare code in the dedicated <c>asset-media-file-code</c> header and no Location.</summary>
+    internal static HttpResponseMessage CreatedWithMediaFileCodeHeader(string code)
+    {
+        var response = new HttpResponseMessage(HttpStatusCode.Created);
+        response.Headers.TryAddWithoutValidation("asset-media-file-code", code);
+        return response;
+    }
+
+    /// <summary>201 with neither a Location nor a code header — a successful status but no resolvable code.</summary>
+    internal static HttpResponseMessage CreatedWithoutCode()
+        => new(HttpStatusCode.Created);
 }

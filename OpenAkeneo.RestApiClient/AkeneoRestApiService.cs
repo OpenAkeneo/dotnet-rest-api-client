@@ -580,38 +580,64 @@ namespace OpenAkeneo.RestApiClient
                 using var retryResponse = await ExecuteMultipartWithPipelineAsync(requestUrl, fieldName, fileBytes, fileName, contentType, token, ct).ConfigureAwait(false);
                 _logger?.LogDebug("HTTP POST (multipart) {Url} → {StatusCode} (after token refresh)", requestUrl, (int)retryResponse.StatusCode);
                 await ReadResponseAsync(retryResponse, "POST", requestUrl, ct).ConfigureAwait(false);
-                return ExtractCodeFromLocationHeader(retryResponse, requestUrl);
+                return ExtractMediaFileCode(retryResponse, requestUrl);
             }
 
             await ReadResponseAsync(response, "POST", requestUrl, ct).ConfigureAwait(false);
-            return ExtractCodeFromLocationHeader(response, requestUrl);
+            return ExtractMediaFileCode(response, requestUrl);
         }
 
         // Akeneo's POST /api/rest/v1/asset-media-files and /api/rest/v1/media-files return 201 with an
-        // empty body; the created file code lives in the Location header as the last path segment.
-        private string ExtractCodeFromLocationHeader(HttpResponseMessage response, string requestUrl)
+        // empty body. The created file code is carried in two places (per the Akeneo REST API spec):
+        //   • the dedicated 'asset-media-file-code' response header — the bare code, and
+        //   • the 'Location' header — the URI of the created resource, whose trailing path is the code.
+        // The instance may send an absolute Location (https://host/api/rest/v1/asset-media-files/<code>)
+        // or a relative one. We prefer the explicit code header, then fall back to parsing Location.
+        // If neither yields a code we throw rather than silently returning empty, so callers never
+        // attach empty media to an asset.
+        // Marker that ends every media-file endpoint path segment:
+        //   .../v1/media-files/<code>, .../v1/asset-media-files/<code>,
+        //   .../v1/category-media-files/<code>, .../v1/reference-entities-media-files/<code>.
+        // The created code is everything after this marker.
+        private const string MediaFilesMarker = "media-files/";
+
+        private string ExtractMediaFileCode(HttpResponseMessage response, string requestUrl)
         {
-            var location = response.Headers.Location?.ToString();
-            if (string.IsNullOrEmpty(location))
+            // 1) Preferred: the dedicated code header (bare code, no URI prefix).
+            if (response.Headers.TryGetValues("asset-media-file-code", out var codeValues))
             {
-                _logger?.LogWarning("POST multipart {Url} returned no Location header; returning empty code", requestUrl);
-                return string.Empty;
+                var code = codeValues.FirstOrDefault();
+                if (!string.IsNullOrEmpty(code))
+                    return code;
             }
 
-            // Location: /api/rest/v1/asset-media-files/3/b/5/a/3b5a8c...filename.png
-            // Strip the well-known API prefix so the remainder is the opaque file code.
-            const string prefix = "/api/rest/v1/asset-media-files/";
-            const string productPrefix = "/api/rest/v1/media-files/";
+            // 2) Fall back to the Location header, handling both absolute and relative URIs and any of
+            //    the media-file endpoints. The code is the path tail after the ".../<x>media-files/" marker.
+            var location = response.Headers.Location?.ToString();
+            if (!string.IsNullOrEmpty(location))
+            {
+                // Reduce an absolute URI to its path so matching works regardless of host.
+                var path = Uri.TryCreate(location, UriKind.Absolute, out var abs) ? abs.AbsolutePath : location;
 
-            if (location.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                return location[prefix.Length..];
+                var idx = path.IndexOf(MediaFilesMarker, StringComparison.OrdinalIgnoreCase);
+                if (idx >= 0)
+                {
+                    var extracted = path[(idx + MediaFilesMarker.Length)..];
+                    if (!string.IsNullOrEmpty(extracted))
+                        return extracted;
+                }
+            }
 
-            if (location.StartsWith(productPrefix, StringComparison.OrdinalIgnoreCase))
-                return location[productPrefix.Length..];
-
-            // Fallback: strip up to and including the first segment of the path that looks like a base URL.
-            var lastSlash = location.LastIndexOf('/');
-            return lastSlash >= 0 ? location[(lastSlash + 1)..] : location;
+            // 3) 2xx but no resolvable code — fail loudly so callers don't proceed with empty media.
+            var headers = response.Headers.ToDictionary(h => h.Key, h => string.Join(", ", h.Value));
+            _logger?.LogError(
+                "POST multipart {Url} succeeded ({StatusCode}) but no media-file code could be resolved "
+                + "from the 'asset-media-file-code' or 'Location' headers.", requestUrl, (int)response.StatusCode);
+            throw new AkeneoApiException(
+                requestUrl, "POST", response.StatusCode,
+                "Media file upload succeeded but the response carried no resolvable media-file code "
+                + "(neither 'asset-media-file-code' nor a parseable 'Location' header was present).",
+                responseHeaders: headers);
         }
 
         private async Task<HttpResponseMessage> ExecuteMultipartWithPipelineAsync(

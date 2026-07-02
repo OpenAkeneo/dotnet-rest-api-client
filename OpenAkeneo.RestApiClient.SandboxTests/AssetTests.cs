@@ -161,6 +161,65 @@ public class AssetTests : IClassFixture<TestBase>
 
         Assert.False(string.IsNullOrWhiteSpace(code), $"Expected a non-empty file code but got: '{code}'");
         Assert.EndsWith("openakeneo_test.png", code);
+
+        // The real media-file code is hierarchical (e.g. "3/b/5/a/<hash>_filename.png"), not just the
+        // filename. A regression that only recovers the last path segment (the old Location-parsing
+        // fallback) would return just "openakeneo_test.png" — assert the full code so that can't pass.
+        Assert.Contains('/', code);
+    }
+
+    // Regression test for: "UploadAssetMediaFileAsync returns empty string — media not attached to asset".
+    // The previous test asserted only the *return value* of the upload, so it could pass even though the
+    // code never actually attached to an asset (or was resolved to just the filename). This test drives
+    // the full round-trip against the live instance: upload → attach to a media_file attribute → re-fetch →
+    // assert the asset's media value reads back as the uploaded code. That is the behaviour the issue is
+    // really about, and it exercises the branch that returned empty against Svedbergs Serenity.
+    [Fact]
+    public async Task UploadThenAttachMediaFile_AssetMediaValueRoundTrips()
+    {
+        var ct = TestContext.Current.CancellationToken;
+
+        // Discover the family's media_file attribute at runtime rather than hardcoding a code we can't
+        // verify — the test stays valid if the family's attribute naming differs.
+        var attributes = await _fixture.Context.GetAssetAttributeListAsync(AssetFamilyCode, ct);
+        var mediaAttribute = attributes.FirstOrDefault(a =>
+            string.Equals(a.Type, "media_file", StringComparison.OrdinalIgnoreCase) && !a.IsReadOnly);
+        Assert.SkipWhen(mediaAttribute is null,
+            $"Family '{AssetFamilyCode}' has no writable media_file attribute; cannot round-trip media.");
+
+        var png1x1 = Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
+
+        var mediaCode = await _fixture.Context.UploadAssetMediaFileAsync(png1x1, "openakeneo_roundtrip.png", "image/png", ct);
+        Assert.False(string.IsNullOrWhiteSpace(mediaCode),
+            $"Upload returned an empty media-file code — media cannot be attached. Got: '{mediaCode}'");
+
+        // Attach the uploaded code to the media attribute, respecting locale scoping.
+        var locale = mediaAttribute!.ValuePerLocale ? "en_US" : null;
+        var asset = new Asset
+        {
+            Code = OpenAkeneoAssetCode,
+            Values = new Dictionary<string, List<AssetValue>>
+            {
+                [mediaAttribute.Code] = new List<AssetValue>
+                {
+                    new AssetValue { Locale = locale, Channel = null, Data = mediaCode }
+                }
+            }
+        };
+        await _fixture.Context.CreateOrUpdateAssetAsync(AssetFamilyCode, asset, ct);
+
+        // Re-fetch and assert the media value actually persisted as the uploaded code — this is what
+        // "media not attached to asset" failed at, even though the upload call itself did not throw.
+        var fetched = await _fixture.Context.GetAssetAsync(AssetFamilyCode, OpenAkeneoAssetCode, ct);
+        Assert.NotNull(fetched.Values);
+        Assert.True(fetched.Values.TryGetValue(mediaAttribute.Code, out var mediaValues) && mediaValues is { Count: > 0 },
+            $"Asset '{OpenAkeneoAssetCode}' has no value for media attribute '{mediaAttribute.Code}' after attach.");
+
+        var persisted = mediaValues!.First().Data as string;
+        Assert.False(string.IsNullOrWhiteSpace(persisted),
+            $"Media attribute '{mediaAttribute.Code}' read back empty — media was not attached.");
+        Assert.Equal(mediaCode, persisted);
     }
 
     #endregion

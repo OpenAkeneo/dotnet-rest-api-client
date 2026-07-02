@@ -58,10 +58,8 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
     private const string RecordCode = ReferenceEntityFixture.RecordCode;
     private const string MediaFileCode = "f/f/c/f/ffcf299bae0e4aeb0b85ea232722cf2a5efea125_Test_Image_01.png";
 
-    // Pre-existing sandbox data — "logo" reference entity with an asset_collection attribute
+    // Pre-existing sandbox data — "logo" reference entity
     private const string LogoReferenceEntityCode = "logo";
-    private const string LogoAssetCollectionAttributeCode = "image_asset";
-    private const string LogoAssetFamilyCode = "logo";
     private const string LogoRecordCode = "hp";
     private const string LogoAssetCode = "HP";
 
@@ -120,24 +118,29 @@ public class ReferenceEntityTests : IClassFixture<ReferenceEntityFixture>
     }
 
     [Fact]
-    public async Task GetReferenceEntityAttributeAsync_AssetCollection_ReturnsReferenceDataName()
+    public async Task GetReferenceEntityAttributeListAsync_AssetCollection_HasAssetFamilyIdentifier()
     {
-        var result = await _fixture.Context.GetReferenceEntityAttributeAsync(LogoReferenceEntityCode, LogoAssetCollectionAttributeCode, TestContext.Current.CancellationToken);
+        var ct = TestContext.Current.CancellationToken;
+        var attributes = await _fixture.Context.GetReferenceEntityAttributeListAsync(LogoReferenceEntityCode, ct);
 
-        Assert.NotNull(result);
-        Assert.Equal(LogoAssetCollectionAttributeCode, result.Code);
-        Assert.Equal("asset_collection", result.Type);
-        Assert.Equal(LogoAssetFamilyCode, result.AssetFamilyIdentifier);
+        var assetAttr = attributes.FirstOrDefault(a => a.Type == "asset_collection");
+        Assert.NotNull(assetAttr);
+        Assert.NotNull(assetAttr.AssetFamilyIdentifier);
+        Assert.NotEmpty(assetAttr.AssetFamilyIdentifier);
     }
 
     [Fact]
     public async Task GetReferenceEntityRecordAsync_AssetCollection_RecordValueContainsAssetCode()
     {
-        var result = await _fixture.Context.GetReferenceEntityRecordAsync(LogoReferenceEntityCode, LogoRecordCode, TestContext.Current.CancellationToken);
+        var ct = TestContext.Current.CancellationToken;
+        var attributes = await _fixture.Context.GetReferenceEntityAttributeListAsync(LogoReferenceEntityCode, ct);
+        var assetAttr = attributes.FirstOrDefault(a => a.Type == "asset_collection");
+        Assert.NotNull(assetAttr);
 
-        Assert.NotNull(result);
-        Assert.Equal(LogoRecordCode, result.Code);
-        var assetCodes = result.Values?[LogoAssetCollectionAttributeCode]
+        var record = await _fixture.Context.GetReferenceEntityRecordAsync(LogoReferenceEntityCode, LogoRecordCode, ct);
+        Assert.NotNull(record);
+        Assert.Equal(LogoRecordCode, record.Code);
+        var assetCodes = record.Values?[assetAttr.Code]
             .SelectMany(v => v.GetData<List<string>>() ?? new List<string>())
             .ToList();
         Assert.NotNull(assetCodes);

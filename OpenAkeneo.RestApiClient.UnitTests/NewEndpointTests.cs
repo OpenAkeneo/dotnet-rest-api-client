@@ -96,6 +96,56 @@ public class NewEndpointTests
         Assert.Equal("3/b/5/a/3b5a8cphoto.jpg", code);
     }
 
+    // Regression: the 'asset-media-file-code' response header is the code source on Akeneo Serenity
+    // (SaaS). Earlier the client read only Location and returned empty when this header was the carrier.
+    [Fact]
+    public async Task HttpPostMultipartAsync_ReturnsCodeFromAssetMediaFileCodeHeader()
+    {
+        var handler = new FakeHttpHandler(
+            FakeHttpHandler.TokenResponse(),
+            FakeHttpHandler.CreatedWithMediaFileCodeHeader("3/c/d/6/3cd6a399_image.png"));
+
+        var svc = Helpers.BuildService(handler);
+        var code = await svc.HttpPostMultipartAsync(
+            "/api/rest/v1/asset-media-files", "file", "data"u8.ToArray(), "image.png", "image/png", CT);
+
+        Assert.Equal("3/c/d/6/3cd6a399_image.png", code);
+    }
+
+    // Regression: Akeneo's spec documents an ABSOLUTE Location URI. The code must be recovered from the
+    // path tail regardless of host — the earlier relative-only prefix match failed on this shape.
+    [Fact]
+    public async Task HttpPostMultipartAsync_ReturnsCodeFromAbsoluteLocationHeader()
+    {
+        var handler = new FakeHttpHandler(
+            FakeHttpHandler.TokenResponse(),
+            FakeHttpHandler.CreatedWithLocation(
+                "https://demo.akeneo.com/api/rest/v1/asset-media-files/3/c/d/6/3cd6a399_image.png"));
+
+        var svc = Helpers.BuildService(handler);
+        var code = await svc.HttpPostMultipartAsync(
+            "/api/rest/v1/asset-media-files", "file", "data"u8.ToArray(), "image.png", "image/png", CT);
+
+        Assert.Equal("3/c/d/6/3cd6a399_image.png", code);
+    }
+
+    // Regression: a 201 that carries neither a code header nor a parseable Location must fail loudly —
+    // this is the exact production condition that previously returned "" and attached empty media.
+    [Fact]
+    public async Task HttpPostMultipartAsync_ThrowsWhenNoCodeResolvable()
+    {
+        var handler = new FakeHttpHandler(
+            FakeHttpHandler.TokenResponse(),
+            FakeHttpHandler.CreatedWithoutCode());
+
+        var svc = Helpers.BuildService(handler);
+
+        var ex = await Assert.ThrowsAsync<AkeneoApiException>(() =>
+            svc.HttpPostMultipartAsync(
+                "/api/rest/v1/asset-media-files", "file", "data"u8.ToArray(), "image.png", "image/png", CT));
+        Assert.Equal(HttpStatusCode.Created, ex.StatusCode);
+    }
+
     // -------------------------------------------------------------------------
     // Products UUID – create, delete, proposal, search
     // -------------------------------------------------------------------------
@@ -424,15 +474,16 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(""));
+            FakeHttpHandler.CreatedWithLocation("/api/rest/v1/media-files/3/b/5/a/3b5a8cbanner.jpg"));
 
         var ctx = Helpers.BuildContext(handler);
-        await ctx.UploadCategoryMediaFileAsync("data"u8.ToArray(), "banner.jpg", "image/jpeg", CT);
+        var code = await ctx.UploadCategoryMediaFileAsync("data"u8.ToArray(), "banner.jpg", "image/jpeg", CT);
 
         var req = handler.LastApiRequest!;
         Assert.Equal(HttpMethod.Post, req.Method);
         Assert.EndsWith("/category-media-files", req.RequestUri);
         Assert.StartsWith("multipart/form-data", req.ContentType);
+        Assert.Equal("3/b/5/a/3b5a8cbanner.jpg", code);
     }
 
     // -------------------------------------------------------------------------
@@ -611,15 +662,16 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(""));
+            FakeHttpHandler.CreatedWithLocation("/api/rest/v1/reference-entities-media-files/3/b/5/a/3b5a8cportrait.jpg"));
 
         var ctx = Helpers.BuildContext(handler);
-        await ctx.UploadReferenceEntityMediaFileAsync("data"u8.ToArray(), "portrait.jpg", "image/jpeg", CT);
+        var code = await ctx.UploadReferenceEntityMediaFileAsync("data"u8.ToArray(), "portrait.jpg", "image/jpeg", CT);
 
         var req = handler.LastApiRequest!;
         Assert.Equal(HttpMethod.Post, req.Method);
         Assert.EndsWith("/reference-entities-media-files", req.RequestUri);
         Assert.StartsWith("multipart/form-data", req.ContentType);
+        Assert.Equal("3/b/5/a/3b5a8cportrait.jpg", code);
     }
 
     // -------------------------------------------------------------------------
