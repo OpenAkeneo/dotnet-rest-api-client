@@ -2,7 +2,7 @@
 
 The low-level HTTP service underneath `AkeneoContext` (reachable via `context.Service`).
 Use it as an escape hatch for raw calls; token management, retries and 401 refresh apply
-automatically. Generated from the compiled v0.9.0 surface — do not edit by hand.
+automatically. Generated from the compiled v0.9.2 surface — do not edit by hand.
 
 **Domain notes:**
 - URLs may be relative (`/api/rest/v1/...`, prefixed with `RestApiUrl`) or absolute.

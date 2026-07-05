@@ -2,7 +2,7 @@
 
 Methods on `AkeneoContext` for the Assets domain. All methods are async and
 accept an optional trailing `CancellationToken ct`. All throw `AkeneoApiException` on
-non-success responses. Generated from the compiled v0.9.0 surface — do not edit by hand.
+non-success responses. Generated from the compiled v0.9.2 surface — do not edit by hand.
 
 **Domain notes:**
 - Hierarchy: asset **family** → asset **attributes** → attribute **options** → **assets**.
