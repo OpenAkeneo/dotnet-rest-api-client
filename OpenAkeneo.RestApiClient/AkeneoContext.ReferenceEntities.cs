@@ -21,19 +21,10 @@ namespace OpenAkeneo.RestApiClient
                 var page = await GetReferenceEntityListAsync(cursor, ct).ConfigureAwait(false);
                 list.AddRange(page.ReferenceEntities);
                 cursor = page.Links?.Next?.Href is not null
-                    ? ExtractSearchAfter(page.Links.Next.Href)
+                    ? AkeneoContextHelpers.ExtractSearchAfter(page.Links.Next.Href)
                     : null;
             } while (cursor is not null);
             return list;
-        }
-
-        private static string? ExtractSearchAfter(string url)
-        {
-            var idx = url.IndexOf("search_after=", StringComparison.OrdinalIgnoreCase);
-            if (idx < 0) return null;
-            idx += "search_after=".Length;
-            var end = url.IndexOf('&', idx);
-            return Uri.UnescapeDataString(end < 0 ? url[idx..] : url[idx..end]);
         }
 
         /// <summary>Returns a page of reference entities, optionally starting after a cursor value.</summary>
@@ -205,7 +196,7 @@ namespace OpenAkeneo.RestApiClient
                 foreach (var record in page.ReferenceEntityRecords)
                     yield return record;
                 cursor = page.Links?.Next?.Href is not null
-                    ? ExtractSearchAfter(page.Links.Next.Href)
+                    ? AkeneoContextHelpers.ExtractSearchAfter(page.Links.Next.Href)
                     : null;
             } while (cursor is not null);
         }
@@ -227,7 +218,7 @@ namespace OpenAkeneo.RestApiClient
             CancellationToken ct = default)
         {
             var list = new List<ReferenceEntityRecord>();
-            await foreach (var record in StreamReferenceEntityRecordsAsync(referenceEntityCode, search, channel, locales, searchAfter, ct: ct))
+            await foreach (var record in StreamReferenceEntityRecordsAsync(referenceEntityCode, search, channel, locales, searchAfter, ct: ct).ConfigureAwait(false))
                 list.Add(record);
             return list;
         }
@@ -303,6 +294,57 @@ namespace OpenAkeneo.RestApiClient
 
         #endregion
 
+        #region Reference entity records (cross-entity)
+
+        /// <summary>
+        /// Returns a page of records across all reference entities (<c>GET /reference-entities/records</c>).
+        /// Supports the <c>reference_entity</c>, <c>search</c>, <c>channel</c>, <c>locales</c> and
+        /// <c>search_after</c> filters via <paramref name="queryParameters"/>.
+        /// </summary>
+        /// <param name="queryParameters">Raw query-string key/value pairs sent to the Akeneo API.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A <see cref="ReferenceEntityRecordList"/> with HAL navigation links.</returns>
+        public async Task<ReferenceEntityRecordList> GetAllReferenceEntityRecordListAsync(Dictionary<string, string>? queryParameters = null, CancellationToken ct = default)
+        {
+            var url = "/api/rest/v1/reference-entities/records";
+            url += AkeneoContextHelpers.BuildQueryString(queryParameters);
+
+            var responseString = await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
+            var (links, items) = AkeneoContextHelpers.ParseHalResponse<ReferenceEntityRecord>(responseString, url);
+
+            return new ReferenceEntityRecordList { Links = links, ReferenceEntityRecords = items };
+        }
+
+        /// <summary>Streams records across all reference entities, following keyset pagination automatically.</summary>
+        /// <param name="referenceEntity">Optional reference entity code filter.</param>
+        /// <param name="search">Optional JSON-encoded search filter.</param>
+        /// <param name="ct">Cancellation token.</param>
+        public async IAsyncEnumerable<ReferenceEntityRecord> StreamAllReferenceEntityRecordsAsync(string? referenceEntity = null, string? search = null, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+        {
+            var queryParameters = new Dictionary<string, string>();
+            if (!string.IsNullOrEmpty(referenceEntity))
+                queryParameters.Add("reference_entity", referenceEntity);
+            if (!string.IsNullOrEmpty(search))
+                queryParameters.Add("search", search);
+
+            while (true)
+            {
+                var page = await GetAllReferenceEntityRecordListAsync(queryParameters, ct).ConfigureAwait(false);
+                foreach (var record in page.ReferenceEntityRecords)
+                    yield return record;
+
+                if (string.IsNullOrEmpty(page.Links?.Next?.Href))
+                    yield break;
+
+                var cursor = AkeneoContextHelpers.ExtractSearchAfter(page.Links.Next.Href);
+                if (string.IsNullOrEmpty(cursor))
+                    yield break;
+                queryParameters["search_after"] = cursor;
+            }
+        }
+
+        #endregion
+
         #region Reference entity media file
 
         /// <summary>Downloads the binary content of a reference entity media file.</summary>
@@ -315,15 +357,25 @@ namespace OpenAkeneo.RestApiClient
             return await _service.HttpGetBytesAsync($"/api/rest/v1/reference-entities-media-files/{codeEscaped}", ct).ConfigureAwait(false);
         }
 
-        /// <summary>Uploads a reference entity media file and returns the created file code from the response.</summary>
+        /// <summary>Downloads a reference entity media file as an unbuffered stream (for large files). Dispose the stream to release the HTTP response.</summary>
+        /// <param name="mediaFileCode">The media file code (may contain path segments separated by <c>/</c>).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A stream over the file content.</returns>
+        public async Task<Stream> DownloadReferenceEntityMediaFileStreamAsync(string mediaFileCode, CancellationToken ct = default)
+        {
+            var codeEscaped = string.Join("/", mediaFileCode.Split('/').Select(Uri.EscapeDataString));
+            return await _service.HttpGetStreamAsync($"/api/rest/v1/reference-entities-media-files/{codeEscaped}", ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Uploads a reference entity media file and returns the created file code (resolved from the 201 response headers).</summary>
         /// <param name="fileBytes">Raw file bytes.</param>
         /// <param name="fileName">Original file name (e.g. <c>portrait.jpg</c>).</param>
         /// <param name="contentType">MIME type (e.g. <c>image/jpeg</c>).</param>
         /// <param name="ct">Cancellation token.</param>
-        /// <returns>Response body string (contains the created file code).</returns>
+        /// <returns>The created media-file code.</returns>
         public async Task<string> UploadReferenceEntityMediaFileAsync(byte[] fileBytes, string fileName, string contentType, CancellationToken ct = default)
         {
-            return await _service.HttpPostMultipartAsync("/api/rest/v1/reference-entities-media-files", "file", fileBytes, fileName, contentType, ct).ConfigureAwait(false);
+            return await _service.HttpPostMultipartAsync("/api/rest/v1/reference-entities-media-files", "file", fileBytes, fileName, contentType, ct: ct).ConfigureAwait(false);
         }
 
         #endregion

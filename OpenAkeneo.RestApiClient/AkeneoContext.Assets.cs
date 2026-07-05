@@ -15,25 +15,29 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<AssetFamily>> GetAssetFamilyListFullAsync(CancellationToken ct = default)
         {
             var list = new List<AssetFamily>();
-            string? cursor = null;
-            do
-            {
-                var page = await GetAssetFamilyListAsync(cursor, ct).ConfigureAwait(false);
-                list.AddRange(page.AssetFamilies);
-                cursor = page.Links?.Next?.Href is not null
-                    ? ExtractAssetSearchAfter(page.Links.Next.Href)
-                    : null;
-            } while (cursor is not null);
+            await foreach (var item in StreamAssetFamiliesAsync(ct).ConfigureAwait(false))
+                list.Add(item);
             return list;
         }
 
-        private static string? ExtractAssetSearchAfter(string url)
+        /// <summary>Streams all asset families, following keyset pagination automatically.</summary>
+        /// <param name="ct">Cancellation token.</param>
+        public async IAsyncEnumerable<AssetFamily> StreamAssetFamiliesAsync([EnumeratorCancellation] CancellationToken ct = default)
         {
-            var idx = url.IndexOf("search_after=", StringComparison.OrdinalIgnoreCase);
-            if (idx < 0) return null;
-            idx += "search_after=".Length;
-            var end = url.IndexOf('&', idx);
-            return Uri.UnescapeDataString(end < 0 ? url[idx..] : url[idx..end]);
+            string? cursor = null;
+            while (true)
+            {
+                var page = await GetAssetFamilyListAsync(cursor, ct).ConfigureAwait(false);
+                foreach (var item in page.AssetFamilies)
+                    yield return item;
+
+                if (string.IsNullOrEmpty(page.Links?.Next?.Href))
+                    yield break;
+
+                cursor = AkeneoContextHelpers.ExtractSearchAfter(page.Links.Next.Href);
+                if (string.IsNullOrEmpty(cursor))
+                    yield break;
+            }
         }
 
         /// <summary>Returns a page of asset families, optionally starting after a cursor value.</summary>
@@ -184,23 +188,36 @@ namespace OpenAkeneo.RestApiClient
         #region Asset media file
 
         /// <summary>Downloads the binary content of an asset media file.</summary>
-        /// <param name="mediaFileCode">The media file code (as returned by the asset value data).</param>
+        /// <param name="mediaFileCode">The media file code (as returned by the asset value data; may contain path segments separated by <c>/</c>).</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>Raw file bytes.</returns>
         public async Task<byte[]> DownloadAssetMediaFileAsync(string mediaFileCode, CancellationToken ct = default)
         {
-            return await _service.HttpGetBytesAsync($"/api/rest/v1/asset-media-files/{Uri.EscapeDataString(mediaFileCode)}", ct).ConfigureAwait(false);
+            // Media-file codes contain '/' path segments that must survive as separators —
+            // escape each segment individually (matches the product/reference-entity downloads).
+            var codeEscaped = string.Join("/", mediaFileCode.Split('/').Select(Uri.EscapeDataString));
+            return await _service.HttpGetBytesAsync($"/api/rest/v1/asset-media-files/{codeEscaped}", ct).ConfigureAwait(false);
         }
 
-        /// <summary>Uploads an asset media file and returns the created file code from the response.</summary>
+        /// <summary>Downloads an asset media file as an unbuffered stream (for large files). Dispose the stream to release the HTTP response.</summary>
+        /// <param name="mediaFileCode">The media file code (may contain path segments separated by <c>/</c>).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A stream over the file content.</returns>
+        public async Task<Stream> DownloadAssetMediaFileStreamAsync(string mediaFileCode, CancellationToken ct = default)
+        {
+            var codeEscaped = string.Join("/", mediaFileCode.Split('/').Select(Uri.EscapeDataString));
+            return await _service.HttpGetStreamAsync($"/api/rest/v1/asset-media-files/{codeEscaped}", ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Uploads an asset media file and returns the created file code (resolved from the 201 response headers).</summary>
         /// <param name="fileBytes">Raw file bytes.</param>
         /// <param name="fileName">Original file name (e.g. <c>image.jpg</c>).</param>
         /// <param name="contentType">MIME type (e.g. <c>image/jpeg</c>).</param>
         /// <param name="ct">Cancellation token.</param>
-        /// <returns>Response body string (contains the created file code).</returns>
+        /// <returns>The created media-file code.</returns>
         public async Task<string> UploadAssetMediaFileAsync(byte[] fileBytes, string fileName, string contentType, CancellationToken ct = default)
         {
-            return await _service.HttpPostMultipartAsync("/api/rest/v1/asset-media-files", "file", fileBytes, fileName, contentType, ct).ConfigureAwait(false);
+            return await _service.HttpPostMultipartAsync("/api/rest/v1/asset-media-files", "file", fileBytes, fileName, contentType, ct: ct).ConfigureAwait(false);
         }
 
         #endregion
@@ -225,7 +242,7 @@ namespace OpenAkeneo.RestApiClient
                 if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Assets == null)
                     yield break;
 
-                cursor = ExtractAssetSearchAfter(partial.Links.Next.Href);
+                cursor = AkeneoContextHelpers.ExtractSearchAfter(partial.Links.Next.Href);
                 if (string.IsNullOrEmpty(cursor))
                     yield break;
             }
@@ -240,7 +257,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<Asset>> GetAssetListFullAsync(string assetFamilyCode, string? search = null, string? searchAfter = null, CancellationToken ct = default)
         {
             var list = new List<Asset>();
-            await foreach (var item in StreamAssetsAsync(assetFamilyCode, search, searchAfter, ct))
+            await foreach (var item in StreamAssetsAsync(assetFamilyCode, search, searchAfter, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -311,6 +328,15 @@ namespace OpenAkeneo.RestApiClient
             var url = $"/api/rest/v1/asset-families/{Uri.EscapeDataString(assetFamilyCode)}/assets/{Uri.EscapeDataString(asset.Code)}";
             var body = JsonSerializer.Serialize(asset);
             return await PatchAndFetchAsync(url, body, () => GetAssetAsync(assetFamilyCode, asset.Code, ct), ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Deletes an asset by its code within a given family.</summary>
+        /// <param name="assetFamilyCode">The asset family code.</param>
+        /// <param name="code">The asset code to delete.</param>
+        /// <param name="ct">Cancellation token.</param>
+        public async Task DeleteAssetAsync(string assetFamilyCode, string code, CancellationToken ct = default)
+        {
+            await _service.HttpDeleteAsync($"/api/rest/v1/asset-families/{Uri.EscapeDataString(assetFamilyCode)}/assets/{Uri.EscapeDataString(code)}", ct).ConfigureAwait(false);
         }
 
         #endregion

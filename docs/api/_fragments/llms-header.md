@@ -1,0 +1,96 @@
+# OpenAkeneo.RestApiClient
+
+> Unofficial .NET client (net8.0/net9.0) for the Akeneo PIM REST API, v{VERSION}. Typed methods
+> for every operation in the Akeneo REST API specification: products, models, attributes,
+> families, categories, channels, reference entities, assets, catalogs, workflows, rules, jobs,
+> bulk upserts, and media. This file is the entry point for AI assistants: read it first, then
+> follow the per-domain links at the bottom for exact signatures.
+
+NuGet: `dotnet add package OpenAkeneo.RestApiClient` · Source: https://github.com/OpenAkeneo/dotnet-rest-api-client
+This file and the per-domain pages also ship inside the NuGet package
+(`~/.nuget/packages/openakeneo.restapiclient/<version>/llms.txt` and `docs/`).
+
+## Setup
+
+```csharp
+// Dependency injection (recommended — shares one OAuth token across resolutions):
+services.AddAkeneoClient(new AkeneoRestApiSettings
+{
+    ClientId = "...", ClientSecret = "...",
+    Username = "...", Password = "...",
+    RestApiUrl = "https://my-tenant.cloud.akeneo.com"
+});
+// then inject AkeneoContext (all high-level methods) or IAkeneoRestApiService (raw HTTP).
+
+// Direct construction (scripts) — AkeneoContext owns the HttpClient; dispose it:
+using var context = new AkeneoContext(settings);
+```
+
+Tokens, refresh, 401 retry, and rate-limit (429) back-off are fully automatic. You never handle
+OAuth yourself.
+
+## Core patterns — read these before picking a method
+
+1. **Upsert is the default write.** `CreateOrUpdateXAsync(entity)` PATCHes: creates when absent,
+   merges when present (absent JSON fields are left unchanged server-side). It then GETs and
+   returns the fresh entity. `CreateXAsync` (plain POST) exists for products and a few resources;
+   it fails with 422 if the entity exists.
+2. **Three read variants per list resource.** `StreamXAsync(...)` (`IAsyncEnumerable<T>`, lazy,
+   constant memory — prefer this), `GetXListFullAsync(...)` (materialises everything — beware
+   memory on big catalogs), `GetXListAsync(page/limit or searchAfter)` (one page with HAL links).
+3. **Product streamers scale past 10 000 items; manual paging does not.** `StreamProduct*Async`
+   and `StreamProductModelsAsync` use `search_after` cursors internally. If you page manually
+   with `page`/`limit`, Akeneo hard-caps at 10 000 items (422 beyond page×limit 10k).
+4. **Bulk beats loops.** To write many entities, use `BulkCreateOrUpdateXAsync(IEnumerable<T>)`
+   (one HTTP call per 100 items, auto-chunked). It returns `List<BulkItemResult>` — check
+   `Succeeded`/`StatusCode` (201 created / 204 updated / 422 rejected with `Message`+`Errors`)
+   **per item**; a bulk call does not throw for individual rejections.
+5. **`Enabled` on products is `bool?`.** Leave it `null` to get the server default (**enabled**).
+   Setting `false` explicitly disables. Never assume unset means disabled.
+6. **Media codes contain `/`.** A media-file code like `3/b/5/a/photo.jpg` is one code, not a
+   path — pass it whole; the client escapes segments correctly.
+7. **Media uploads need a link target.** `UploadProductMediaFileAsync` requires `productJson`
+   (or `productModelJson`): `{"identifier":"sku","attribute":"attr_code","scope":null,"locale":null}`.
+   `UploadCategoryMediaFileAsync` requires `categoryJson`. Asset and reference-entity uploads
+   need no target. All uploads return the created **media-file code**.
+8. **Large media: use the `Stream` variants.** `DownloadXMediaFileStreamAsync` streams without
+   buffering; the `byte[]` variants buffer the whole file. Dispose the returned stream.
+9. **Attribute values are polymorphic.** `product.Values` is
+   `Dictionary<string, List<ProductValue>>`; each `ProductValue` has `Locale`, `Scope`, and
+   `object? Data`. Use `GetData<T>()` (e.g. `GetData<MetricValue>()`), `GetStringData()`, or
+   build data per the table below. Never inspect `Data`'s runtime type by string parsing.
+10. **Errors are one exception type.** Everything throws `AkeneoApiException` with `StatusCode`,
+    `ApiMessage`, `RequestUrl`, `ResponseBody`, and `FieldErrors` (per-field 422 details).
+    Feature-gated endpoints (workflows, rules, ui-extensions, catalogs-for-apps, drafts) return
+    401/403/404 on unlicensed tenants — catch and degrade gracefully.
+
+## Attribute value `data` shapes (instance-confirmed)
+
+| Attribute type | `Data` shape |
+|---|---|
+| `pim_catalog_text` / `textarea` / `identifier` / `date` / `simpleselect` / `image` / `file` | `string` |
+| `pim_catalog_boolean` | `bool` |
+| `pim_catalog_number` | `long` / `double` (use `GetStringData()` for invariant text) |
+| `pim_catalog_multiselect` / `asset_collection` / reference-entity collection | list of `string` |
+| `pim_catalog_metric` | `{ amount, unit }` → `GetData<MetricValue>()` |
+| `pim_catalog_price_collection` | list of `{ amount, currency }` |
+| `pim_catalog_table` | list of row objects |
+
+## Which method do I use? (task → method)
+
+| Task | Method |
+|---|---|
+| Read every product | `StreamProductUuidsAsync()` (or `StreamProductIdentifiersAsync` for SKU-keyed) |
+| Filter products server-side | `search` parameter with Akeneo filter JSON, or `SearchProductUuidsAsync(body)` for large payloads |
+| Create/update one product | `CreateOrUpdateProductUuidAsync` / `CreateOrUpdateProductIdentifierAsync` |
+| Import many entities | `BulkCreateOrUpdateXAsync` for the resource (products, attributes, families, …) |
+| Create product, server picks UUID | `CreateProductUuidAsync(new ProductUuid())` — UUID resolved from the response |
+| Delete | `DeleteProductUuidAsync`, `DeleteProductIdentifierAsync`, `DeleteProductModelAsync`, `DeleteAssetAsync`, `DeleteCatalogAsync`, `DeleteExtensionAsync` (most other resources are not deletable via the API) |
+| Put an image on a product | `UploadProductMediaFileAsync(bytes, name, mime, productJson)` — uploads **and links** in one call |
+| Download media | `DownloadXMediaFileAsync` (bytes) / `DownloadXMediaFileStreamAsync` (stream) |
+| Set up catalog structure | attributes → attribute options → families → family variants (in that order; referenced codes must exist first) |
+| Reference data (brands etc.) | reference entities + records; records across all entities: `StreamAllReferenceEntityRecordsAsync` |
+| Digital asset library | asset families / attributes / options / assets; upload via `UploadAssetMediaFileAsync` |
+| Run an import/export job | `LaunchImportJobAsync` / `LaunchExportJobAsync` |
+| Instance metadata | `GetSystemInformationAsync`, `GetApiOverviewAsync` |
+| Raw endpoint not covered | `context.Service.HttpGetAsync/HttpPostAsync/...` (auth + retry included) |

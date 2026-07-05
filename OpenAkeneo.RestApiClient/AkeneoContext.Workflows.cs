@@ -36,7 +36,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<Workflow>> GetWorkflowListFullAsync(CancellationToken ct = default)
         {
             var list = new List<Workflow>();
-            await foreach (var item in StreamWorkflowsAsync(ct))
+            await foreach (var item in StreamWorkflowsAsync(ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -116,7 +116,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<WorkflowStepAssignee>> GetWorkflowStepAssigneeListFullAsync(string stepUuid, CancellationToken ct = default)
         {
             var list = new List<WorkflowStepAssignee>();
-            await foreach (var item in StreamWorkflowStepAssigneesAsync(stepUuid, ct))
+            await foreach (var item in StreamWorkflowStepAssigneesAsync(stepUuid, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -187,7 +187,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<WorkflowTask>> GetWorkflowTaskListFullAsync(string? search = null, bool withAttributes = false, CancellationToken ct = default)
         {
             var list = new List<WorkflowTask>();
-            await foreach (var item in StreamWorkflowTasksAsync(search, withAttributes, ct))
+            await foreach (var item in StreamWorkflowTasksAsync(search, withAttributes, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -243,6 +243,66 @@ namespace OpenAkeneo.RestApiClient
             var responseString = await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
 
             return AkeneoContextHelpers.DeserializeOrThrow<WorkflowTask>(responseString, url);
+        }
+
+        /// <summary>
+        /// Starts workflow executions for products and/or product models (max 100 per call;
+        /// larger inputs are chunked transparently). Build items with
+        /// <see cref="WorkflowExecutionRequest.ForProduct"/> / <see cref="WorkflowExecutionRequest.ForProductModel"/>.
+        /// </summary>
+        /// <param name="requests">The executions to start.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>The raw JSON response bodies (one per chunk; 201 on full success, 207 on partial).</returns>
+        public async Task<List<string>> StartWorkflowExecutionsAsync(IEnumerable<WorkflowExecutionRequest> requests, CancellationToken ct = default)
+        {
+            const string url = "/api/rest/v1/workflows/executions";
+            var responses = new List<string>();
+            foreach (var chunk in requests.Chunk(100))
+            {
+                var body = JsonSerializer.Serialize(chunk);
+                responses.Add(await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false));
+            }
+            return responses;
+        }
+
+        /// <summary>Marks an enrichment task as completed.</summary>
+        /// <param name="taskUuid">The workflow task UUID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        public async Task CompleteWorkflowTaskAsync(string taskUuid, CancellationToken ct = default)
+        {
+            await PatchWorkflowTaskAsync(taskUuid, """{"status":"completed"}""", ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Approves a review task.</summary>
+        /// <param name="taskUuid">The workflow task UUID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        public async Task ApproveWorkflowTaskAsync(string taskUuid, CancellationToken ct = default)
+        {
+            await PatchWorkflowTaskAsync(taskUuid, """{"status":"approved"}""", ct).ConfigureAwait(false);
+        }
+
+        /// <summary>Rejects a review task, sending it back to an earlier workflow step.</summary>
+        /// <param name="taskUuid">The workflow task UUID.</param>
+        /// <param name="sendBackToStepUuid">UUID of the step the task is returned to.</param>
+        /// <param name="rejectedAttributesJson">Optional JSON object detailing the rejected attributes
+        /// (per-attribute comment/locale/scope — see the Akeneo API reference for the shape).</param>
+        /// <param name="ct">Cancellation token.</param>
+        public async Task RejectWorkflowTaskAsync(string taskUuid, string sendBackToStepUuid, string? rejectedAttributesJson = null, CancellationToken ct = default)
+        {
+            var body = new Dictionary<string, object>
+            {
+                ["status"] = "rejected",
+                ["send_back_to_step_uuid"] = sendBackToStepUuid
+            };
+            if (!string.IsNullOrEmpty(rejectedAttributesJson))
+                body["rejected_attributes"] = JsonSerializer.Deserialize<JsonElement>(rejectedAttributesJson);
+
+            await PatchWorkflowTaskAsync(taskUuid, JsonSerializer.Serialize(body), ct).ConfigureAwait(false);
+        }
+
+        private async Task PatchWorkflowTaskAsync(string taskUuid, string body, CancellationToken ct)
+        {
+            await _service.HttpPatchAsync($"/api/rest/v1/workflows/tasks/{Uri.EscapeDataString(taskUuid)}", body, ct).ConfigureAwait(false);
         }
 
         #endregion

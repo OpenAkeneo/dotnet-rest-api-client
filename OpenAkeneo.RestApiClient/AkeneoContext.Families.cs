@@ -34,7 +34,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<Family>> GetFamilyListFullAsync(string? search = null, bool withCount = false, CancellationToken ct = default)
         {
             var list = new List<Family>();
-            await foreach (var item in StreamFamiliesAsync(search, withCount, ct))
+            await foreach (var item in StreamFamiliesAsync(search, withCount, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -107,10 +107,10 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>The created <see cref="Family"/>.</returns>
         public async Task<Family> CreateFamilyAsync(Family family, CancellationToken ct = default)
         {
-            var url = "/api/rest/v1/families";
+            // POST returns 201 with an empty body per the Akeneo spec, so fetch the created entity.
             var body = JsonSerializer.Serialize(family);
-            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
-            return AkeneoContextHelpers.DeserializeOrThrow<Family>(responseString, url);
+            await _service.HttpPostAsync("/api/rest/v1/families", body, ct).ConfigureAwait(false);
+            return await GetFamilyAsync(family.Code, ct).ConfigureAwait(false);
         }
 
         #endregion
@@ -142,7 +142,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<FamilyVariant>> GetFamilyVariantListFullAsync(string familyCode, bool withCount = false, CancellationToken ct = default)
         {
             var list = new List<FamilyVariant>();
-            await foreach (var item in StreamFamilyVariantsAsync(familyCode, withCount, ct))
+            await foreach (var item in StreamFamilyVariantsAsync(familyCode, withCount, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -216,10 +216,11 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>The created <see cref="FamilyVariant"/>.</returns>
         public async Task<FamilyVariant> CreateFamilyVariantAsync(string familyCode, FamilyVariant variant, CancellationToken ct = default)
         {
+            // POST returns 201 with an empty body per the Akeneo spec, so fetch the created entity.
             var url = $"/api/rest/v1/families/{Uri.EscapeDataString(familyCode)}/variants";
             var body = JsonSerializer.Serialize(variant);
-            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
-            return AkeneoContextHelpers.DeserializeOrThrow<FamilyVariant>(responseString, url);
+            await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
+            return await GetFamilyVariantAsync(familyCode, variant.Code, ct).ConfigureAwait(false);
         }
 
         #endregion

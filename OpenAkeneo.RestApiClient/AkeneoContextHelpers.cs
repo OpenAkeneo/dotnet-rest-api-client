@@ -58,18 +58,47 @@ namespace OpenAkeneo.RestApiClient
         }
 
         /// <summary>
-        /// Deserializes a HAL response string and extracts the embedded "items" array as a typed list.
-        /// Returns an empty list when no embedded items are present.
+        /// Extracts the <c>search_after</c> cursor value from a HAL <c>next</c> link URL.
+        /// Returns <c>null</c> when the URL carries no cursor.
+        /// </summary>
+        internal static string? ExtractSearchAfter(string url)
+        {
+            var idx = url.IndexOf("search_after=", StringComparison.OrdinalIgnoreCase);
+            if (idx < 0) return null;
+            idx += "search_after=".Length;
+            var end = url.IndexOf('&', idx);
+            return Uri.UnescapeDataString(end < 0 ? url[idx..] : url[idx..end]);
+        }
+
+        /// <summary>
+        /// Extracts the trailing path segment from a <c>Location</c> header value (absolute or
+        /// relative), e.g. the server-generated UUID of a created resource. Returns <c>null</c>
+        /// when no segment can be resolved.
+        /// </summary>
+        internal static string? ExtractLastPathSegment(string? location)
+        {
+            if (string.IsNullOrEmpty(location))
+                return null;
+
+            var path = Uri.TryCreate(location, UriKind.Absolute, out var abs) ? abs.AbsolutePath : location;
+            var queryIdx = path.IndexOf('?');
+            if (queryIdx >= 0)
+                path = path[..queryIdx];
+            path = path.TrimEnd('/');
+
+            var idx = path.LastIndexOf('/');
+            var segment = path[(idx + 1)..];
+            return string.IsNullOrEmpty(segment) ? null : Uri.UnescapeDataString(segment);
+        }
+
+        /// <summary>
+        /// Deserializes a HAL response string and extracts the embedded "items" array as a typed list
+        /// in a single deserialization pass. Returns an empty list when no embedded items are present.
         /// </summary>
         internal static (HalLinks? Links, List<T> Items) ParseHalResponse<T>(string responseString, string requestUrl)
         {
-            var responseJson = DeserializeOrThrow<HalResponse>(responseString, requestUrl);
-            var items = new List<T>();
-
-            if (responseJson.Embedded != null && responseJson.Embedded.TryGetValue("items", out var itemsElement))
-                items = itemsElement.EnumerateArray().Select(x => x.Deserialize<T>()!).ToList();
-
-            return (responseJson.Links, items);
+            var responseJson = DeserializeOrThrow<HalResponse<T>>(responseString, requestUrl);
+            return (responseJson.Links, responseJson.Embedded?.Items ?? new List<T>());
         }
     }
 }

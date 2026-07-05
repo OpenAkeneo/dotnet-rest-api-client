@@ -36,7 +36,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<AkeneoAttribute>> GetAttributeListFullAsync(string? search = null, bool withCount = false, bool withTableSelectOptions = false, CancellationToken ct = default)
         {
             var list = new List<AkeneoAttribute>();
-            await foreach (var item in StreamAttributesAsync(search, withCount, withTableSelectOptions, ct))
+            await foreach (var item in StreamAttributesAsync(search, withCount, withTableSelectOptions, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -114,10 +114,10 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>The created <see cref="AkeneoAttribute"/>.</returns>
         public async Task<AkeneoAttribute> CreateAttributeAsync(AkeneoAttribute attribute, CancellationToken ct = default)
         {
-            var url = "/api/rest/v1/attributes";
+            // POST returns 201 with an empty body per the Akeneo spec, so fetch the created entity.
             var body = JsonSerializer.Serialize(attribute);
-            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
-            return AkeneoContextHelpers.DeserializeOrThrow<AkeneoAttribute>(responseString, url);
+            await _service.HttpPostAsync("/api/rest/v1/attributes", body, ct).ConfigureAwait(false);
+            return await GetAttributeAsync(attribute.Code, ct).ConfigureAwait(false);
         }
 
         #endregion
@@ -149,7 +149,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<AttributeOption>> GetAttributeOptionListFullAsync(string attributeCode, bool withCount = false, CancellationToken ct = default)
         {
             var list = new List<AttributeOption>();
-            await foreach (var item in StreamAttributeOptionsAsync(attributeCode, withCount, ct))
+            await foreach (var item in StreamAttributeOptionsAsync(attributeCode, withCount, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -225,10 +225,11 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>The created <see cref="AttributeOption"/>.</returns>
         public async Task<AttributeOption> CreateAttributeOptionAsync(string attributeCode, AttributeOption attributeOption, CancellationToken ct = default)
         {
+            // POST returns 201 with an empty body per the Akeneo spec, so fetch the created entity.
             var url = $"/api/rest/v1/attributes/{Uri.EscapeDataString(attributeCode)}/options";
             var body = JsonSerializer.Serialize(attributeOption);
-            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
-            return AkeneoContextHelpers.DeserializeOrThrow<AttributeOption>(responseString, url);
+            await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
+            return await GetAttributeOptionAsync(attributeCode, attributeOption.Code, ct).ConfigureAwait(false);
         }
 
         #endregion
@@ -260,7 +261,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<AttributeGroup>> GetAttributeGroupListFullAsync(string? search = null, bool withCount = false, CancellationToken ct = default)
         {
             var list = new List<AttributeGroup>();
-            await foreach (var item in StreamAttributeGroupsAsync(search, withCount, ct))
+            await foreach (var item in StreamAttributeGroupsAsync(search, withCount, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -305,12 +306,12 @@ namespace OpenAkeneo.RestApiClient
         }
 
         /// <summary>Returns a single attribute group by its code.</summary>
-        /// <param name="attributeCode">The attribute group code.</param>
+        /// <param name="code">The attribute group code.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>The matching <see cref="AttributeGroup"/>.</returns>
-        public async Task<AttributeGroup> GetAttributeGroupAsync(string attributeCode, CancellationToken ct = default)
+        public async Task<AttributeGroup> GetAttributeGroupAsync(string code, CancellationToken ct = default)
         {
-            var url = $"/api/rest/v1/attribute-groups/{Uri.EscapeDataString(attributeCode)}";
+            var url = $"/api/rest/v1/attribute-groups/{Uri.EscapeDataString(code)}";
 
             var responseString = await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
 
@@ -335,10 +336,10 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>The created <see cref="AttributeGroup"/>.</returns>
         public async Task<AttributeGroup> CreateAttributeGroupAsync(AttributeGroup attributeGroup, CancellationToken ct = default)
         {
-            var url = "/api/rest/v1/attribute-groups";
+            // POST returns 201 with an empty body per the Akeneo spec, so fetch the created entity.
             var body = JsonSerializer.Serialize(attributeGroup);
-            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
-            return AkeneoContextHelpers.DeserializeOrThrow<AttributeGroup>(responseString, url);
+            await _service.HttpPostAsync("/api/rest/v1/attribute-groups", body, ct).ConfigureAwait(false);
+            return await GetAttributeGroupAsync(attributeGroup.Code, ct).ConfigureAwait(false);
         }
 
         #endregion

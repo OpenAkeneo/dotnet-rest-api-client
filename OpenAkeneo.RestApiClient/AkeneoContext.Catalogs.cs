@@ -16,16 +16,12 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>A <see cref="CatalogList"/> with HAL navigation links.</returns>
         public async Task<CatalogList> GetCatalogListAsync(int page = 1, int limit = 100, CancellationToken ct = default)
         {
+            AkeneoContextHelpers.ValidatePagination(page, limit);
             var url = $"/api/rest/v1/catalogs?page={page}&limit={limit}";
             var responseString = await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
-            var responseJson = AkeneoContextHelpers.DeserializeOrThrow<HalResponse>(responseString, url);
+            var (links, items) = AkeneoContextHelpers.ParseHalResponse<Catalog>(responseString, url);
 
-            var result = new CatalogList { Links = responseJson.Links };
-
-            if (responseJson.Embedded != null && responseJson.Embedded.TryGetValue("items", out var itemsElement))
-                result.Catalogs = itemsElement.EnumerateArray().Select(x => x.Deserialize<Catalog>()!).ToList();
-
-            return result;
+            return new CatalogList { Links = links, Catalogs = items };
         }
 
         /// <summary>Streams all catalogs, following HAL pagination automatically.</summary>
@@ -36,11 +32,12 @@ namespace OpenAkeneo.RestApiClient
             while (true)
             {
                 var partial = await GetCatalogListAsync(page, 100, ct).ConfigureAwait(false);
-                if (partial.Catalogs == null || partial.Catalogs.Count == 0)
-                    yield break;
-                foreach (var item in partial.Catalogs)
-                    yield return item;
-                if (partial.Links?.Next == null)
+                if (partial.Catalogs != null)
+                    foreach (var item in partial.Catalogs)
+                        yield return item;
+                // Terminate on the next link only (a page may legitimately be empty), matching
+                // the convention used by every other paginator since the 0.5.0 early-exit fix.
+                if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Catalogs == null)
                     yield break;
                 page++;
             }
@@ -52,7 +49,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<Catalog>> GetCatalogListFullAsync(CancellationToken ct = default)
         {
             var list = new List<Catalog>();
-            await foreach (var item in StreamCatalogsAsync(ct))
+            await foreach (var item in StreamCatalogsAsync(ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -76,18 +73,14 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>A <see cref="CatalogProductUuidList"/> with HAL navigation links.</returns>
         public async Task<CatalogProductUuidList> GetCatalogProductUuidListAsync(string catalogId, int limit = 100, string? searchAfter = null, CancellationToken ct = default)
         {
+            AkeneoContextHelpers.ValidateLimit(limit);
             var url = $"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/product-uuids?limit={limit}";
             if (!string.IsNullOrEmpty(searchAfter))
                 url += $"&search_after={Uri.EscapeDataString(searchAfter)}";
             var responseString = await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
-            var responseJson = AkeneoContextHelpers.DeserializeOrThrow<HalResponse>(responseString, url);
+            var (links, items) = AkeneoContextHelpers.ParseHalResponse<string>(responseString, url);
 
-            var result = new CatalogProductUuidList { Links = responseJson.Links };
-
-            if (responseJson.Embedded != null && responseJson.Embedded.TryGetValue("items", out var itemsElement))
-                result.Uuids = itemsElement.EnumerateArray().Select(x => x.GetString()!).ToList();
-
-            return result;
+            return new CatalogProductUuidList { Links = links, Uuids = items };
         }
 
         /// <summary>Returns a page of full product objects belonging to a catalog.</summary>
@@ -98,18 +91,14 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>A <see cref="ProductUuidList"/> with HAL navigation links.</returns>
         public async Task<ProductUuidList> GetCatalogProductListAsync(string catalogId, int limit = 100, string? searchAfter = null, CancellationToken ct = default)
         {
+            AkeneoContextHelpers.ValidateLimit(limit);
             var url = $"/api/rest/v1/catalogs/{Uri.EscapeDataString(catalogId)}/products?limit={limit}";
             if (!string.IsNullOrEmpty(searchAfter))
                 url += $"&search_after={Uri.EscapeDataString(searchAfter)}";
             var responseString = await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
-            var responseJson = AkeneoContextHelpers.DeserializeOrThrow<HalResponse>(responseString, url);
+            var (links, items) = AkeneoContextHelpers.ParseHalResponse<ProductUuid>(responseString, url);
 
-            var result = new ProductUuidList { Links = responseJson.Links };
-
-            if (responseJson.Embedded != null && responseJson.Embedded.TryGetValue("items", out var itemsElement))
-                result.Products = itemsElement.EnumerateArray().Select(x => x.Deserialize<ProductUuid>()!).ToList();
-
-            return result;
+            return new ProductUuidList { Links = links, Products = items };
         }
 
         /// <summary>Streams all product UUIDs belonging to a catalog, following HAL pagination automatically.</summary>
@@ -128,7 +117,7 @@ namespace OpenAkeneo.RestApiClient
                     yield return uuid;
                 if (string.IsNullOrEmpty(partial.Links?.Next?.Href))
                     yield break;
-                cursor = ExtractSearchAfter(partial.Links.Next.Href);
+                cursor = AkeneoContextHelpers.ExtractSearchAfter(partial.Links.Next.Href);
                 if (string.IsNullOrEmpty(cursor))
                     yield break;
             }
@@ -141,7 +130,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<string>> GetCatalogProductUuidListFullAsync(string catalogId, CancellationToken ct = default)
         {
             var list = new List<string>();
-            await foreach (var uuid in StreamCatalogProductUuidsAsync(catalogId, ct))
+            await foreach (var uuid in StreamCatalogProductUuidsAsync(catalogId, ct).ConfigureAwait(false))
                 list.Add(uuid);
             return list;
         }
@@ -162,7 +151,7 @@ namespace OpenAkeneo.RestApiClient
                     yield return product;
                 if (string.IsNullOrEmpty(partial.Links?.Next?.Href))
                     yield break;
-                cursor = ExtractSearchAfter(partial.Links.Next.Href);
+                cursor = AkeneoContextHelpers.ExtractSearchAfter(partial.Links.Next.Href);
                 if (string.IsNullOrEmpty(cursor))
                     yield break;
             }
@@ -175,7 +164,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<ProductUuid>> GetCatalogProductListFullAsync(string catalogId, CancellationToken ct = default)
         {
             var list = new List<ProductUuid>();
-            await foreach (var product in StreamCatalogProductsAsync(catalogId, ct))
+            await foreach (var product in StreamCatalogProductsAsync(catalogId, ct).ConfigureAwait(false))
                 list.Add(product);
             return list;
         }

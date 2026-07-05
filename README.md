@@ -23,27 +23,37 @@ Akeneo does not publish an official .NET SDK. The options available are either o
 
 ## Features
 
+- **Spec-complete**: a typed method for every operation in the Akeneo REST API specification — products, models, attributes, families, categories, channels, reference entities, assets, catalogs, rules, workflows, UI extensions, jobs, and media
 - Two-layer architecture: low-level HTTP service + high-level typed context
-- Automatic OAuth token acquisition, in-memory caching, and proactive refresh at 75% of token lifetime
+- Automatic OAuth token acquisition, shared caching across DI resolutions, and proactive refresh at 75% of token lifetime
 - Transparent 401 retry — fetches a new token and retries once without any extra code
-- `IAsyncEnumerable<T>` streaming for all list resources — handles pagination automatically
-- Polly resilience pipeline: 5 retries with exponential back-off, jitter, and `Retry-After` support
+- `IAsyncEnumerable<T>` streaming for all list resources — handles pagination automatically, including `search_after` cursors (no 10 000-item page ceiling on products)
+- **Bulk create-or-update** for all batchable resources: 100 items per HTTP call, auto-chunked, with typed per-item results
+- Streaming media downloads (`Stream`-returning variants) for large files
+- Polly resilience pipeline: 5 retries with exponential back-off, jitter, and `Retry-After` support — verb-aware, so non-idempotent POSTs are never replayed after ambiguous failures
 - `CancellationToken` support on every method
 - Optional disk-based token cache for persistence across process restarts
+- LLM-ready documentation (`llms.txt` + per-domain pages) generated from the compiled surface and shipped in the package
 
 ---
 
 ## AI & LLM Integration
 
-Are you using an AI coding assistant (like GitHub Copilot, Cursor, or Claude) to help you build with `OpenAkeneo.RestApiClient`? We have prepared highly optimized, compact markdown representations of the Akeneo REST API specifically designed to be read by LLMs.
+Are you using an AI coding assistant (like GitHub Copilot, Cursor, or Claude) to help you build with `OpenAkeneo.RestApiClient`? The library ships LLM-oriented documentation following the **llms.txt** convention, generated directly from the compiled API surface so it can never drift from the code:
 
-You can provide the following RAW links directly to your AI assistant to give it full context on the API endpoints, methods, and request/response schemas available:
+- **[llms.txt](https://raw.githubusercontent.com/OpenAkeneo/dotnet-rest-api-client/main/llms.txt)** — the single entry point: setup, the core patterns and gotchas, a task→method decision table, and links to per-domain reference pages.
+- **[docs/api/](https://github.com/OpenAkeneo/dotnet-rest-api-client/tree/main/docs/api)** — one compact page per domain (products, assets, bulk, …) with every method's exact signature, purpose, parameters, and domain-specific pitfalls.
 
-- **[OpenAkeneo.RestApiClient.ApiReference.md](https://raw.githubusercontent.com/OpenAkeneo/dotnet-rest-api-client/main/OpenAkeneo.RestApiClient.ApiReference.md)**: The full, compact API specification.
-- **[OpenAkeneo.RestApiClient.ApiIndex.md](https://raw.githubusercontent.com/OpenAkeneo/dotnet-rest-api-client/main/OpenAkeneo.RestApiClient.ApiIndex.md)**: An index containing exact line numbers and summaries for each endpoint within the reference.
+Both are also included in the NuGet package (`llms.txt` at the package root, pages under `docs/`), so agents working offline can read them from the package cache at `~/.nuget/packages/openakeneo.restapiclient/<version>/`.
 
 **Prompt Example:**
-> "Read the API index at `https://raw.githubusercontent.com/OpenAkeneo/dotnet-rest-api-client/main/OpenAkeneo.RestApiClient.ApiIndex.md` to find the endpoints I need to update a product, then read the relevant lines from the API Reference at `https://raw.githubusercontent.com/OpenAkeneo/dotnet-rest-api-client/main/OpenAkeneo.RestApiClient.ApiReference.md` and write the C# code using `OpenAkeneo.RestApiClient`."
+> "Read `https://raw.githubusercontent.com/OpenAkeneo/dotnet-rest-api-client/main/llms.txt`, pick the right methods for updating products, then follow its per-domain links for exact signatures before writing the C# code."
+
+The per-domain pages also carry the instance-confirmed reference data an assistant needs to write
+correct values: valid `Type` string literals for product/reference-entity/asset attributes, the
+runtime `Data` shape per attribute type (and which .NET type to use with `GetData<T>()`), valid
+`ValidationRule`/`MediaType` literals, and which model fields are server-managed and must be
+omitted from write payloads.
 
 ---
 
@@ -282,12 +292,14 @@ await context.DeleteProductUuidAsync("a4f47e32-b29c-4f3d-a0b2-123456789abc");
 await context.SubmitProductUuidProposalAsync("a4f47e32-b29c-4f3d-a0b2-123456789abc");
 
 // Search product UUIDs (returns the matching UUIDs list resource)
-var search = """{"enabled":[{"operator":"=","value":true}]}""";
-var uuids = await context.SearchProductUuidsAsync(search: search);
+var searchBody = """{"search":{"enabled":[{"operator":"=","value":true}]}}""";
+var uuids = await context.SearchProductUuidsAsync(searchBody);
 
-// Upload a media file and get back the file code
+// Upload a media file onto a product attribute value (the product/attribute link is
+// required by the API) — returns the created media-file code.
 var fileBytes = await File.ReadAllBytesAsync("image.jpg");
-var fileCode = await context.UploadProductMediaFileAsync(fileBytes, "image.jpg", "image/jpeg");
+var productJson = """{"identifier":"my-sku","attribute":"picture","scope":null,"locale":null}""";
+var fileCode = await context.UploadProductMediaFileAsync(fileBytes, "image.jpg", "image/jpeg", productJson);
 
 // Draft (requires Workflow feature)
 var draft = await context.GetProductUuidDraftAsync("a4f47e32-b29c-4f3d-a0b2-123456789abc");
@@ -582,11 +594,29 @@ var created = await context.CreateCategoryAsync(new Category
     Labels = new() { ["en_US"] = "New Arrivals" }
 });
 
-// Upload a category media file
+// Upload a category media file (enriched categories; the category/attribute link is required)
 var imageBytes = await File.ReadAllBytesAsync("banner.png");
-var fileCode = await context.UploadCategoryMediaFileAsync(imageBytes, "banner.png", "image/png");
+var categoryJson = """{"code":"sale","attribute_code":"image_1","channel":null,"locale":null}""";
+var fileCode = await context.UploadCategoryMediaFileAsync(imageBytes, "banner.png", "image/png", categoryJson);
 
 byte[] bytes = await context.DownloadCategoryMediaFileAsync("c/7/3/c/c73cc4...ecf4_banner.png");
+```
+
+---
+
+### Bulk operations
+
+Every batchable resource (products, product models, families, family variants, attributes,
+attribute options, attribute groups, association types, channels, categories, reference-entity
+records, assets) has a `BulkCreateOrUpdate…Async` method: one HTTP call per 100 items
+(auto-chunked), returning a per-item result — a bulk call does **not** throw for individual
+rejections, so always inspect the results.
+
+```csharp
+var results = await context.BulkCreateOrUpdateProductIdentifiersAsync(products);
+
+foreach (var item in results.Where(r => !r.Succeeded))
+    Console.WriteLine($"{item.Key}: {item.StatusCode} {item.Message}");
 ```
 
 ---

@@ -21,6 +21,11 @@ namespace OpenAkeneo.RestApiClient
 
             services.AddSingleton(settings);
 
+            // One token cache per connection: the typed client below is transient (so
+            // IHttpClientFactory can rotate handlers), but every instance shares this cache,
+            // ensuring a single OAuth token is fetched and reused across resolutions.
+            services.AddSingleton<AkeneoTokenCache>();
+
             services.AddHttpClient<AkeneoRestApiService>((sp, client) => { })
                     .Services
                     .AddTransient<IAkeneoRestApiService>(sp => sp.GetRequiredService<AkeneoRestApiService>());

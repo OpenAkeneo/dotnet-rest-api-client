@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenAkeneo.RestApiClient.Sa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenAkeneo.RestApiClient.UnitTests", "OpenAkeneo.RestApiClient.UnitTests\OpenAkeneo.RestApiClient.UnitTests.csproj", "{008E3E91-4780-4B8B-B066-9066D2A1C268}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocGen", "tools\DocGen\DocGen.csproj", "{7BE0E0DB-8690-5EF9-3850-D9F963ACA2CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,18 @@ Global
 		{008E3E91-4780-4B8B-B066-9066D2A1C268}.Release|x64.Build.0 = Release|Any CPU
 		{008E3E91-4780-4B8B-B066-9066D2A1C268}.Release|x86.ActiveCfg = Release|Any CPU
 		{008E3E91-4780-4B8B-B066-9066D2A1C268}.Release|x86.Build.0 = Release|Any CPU
+		{7BE0E0DB-8690-5EF9-3850-D9F963ACA2CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7BE0E0DB-8690-5EF9-3850-D9F963ACA2CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7BE0E0DB-8690-5EF9-3850-D9F963ACA2CC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7BE0E0DB-8690-5EF9-3850-D9F963ACA2CC}.Debug|x64.Build.0 = Debug|Any CPU
+		{7BE0E0DB-8690-5EF9-3850-D9F963ACA2CC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7BE0E0DB-8690-5EF9-3850-D9F963ACA2CC}.Debug|x86.Build.0 = Debug|Any CPU
+		{7BE0E0DB-8690-5EF9-3850-D9F963ACA2CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7BE0E0DB-8690-5EF9-3850-D9F963ACA2CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7BE0E0DB-8690-5EF9-3850-D9F963ACA2CC}.Release|x64.ActiveCfg = Release|Any CPU
+		{7BE0E0DB-8690-5EF9-3850-D9F963ACA2CC}.Release|x64.Build.0 = Release|Any CPU
+		{7BE0E0DB-8690-5EF9-3850-D9F963ACA2CC}.Release|x86.ActiveCfg = Release|Any CPU
+		{7BE0E0DB-8690-5EF9-3850-D9F963ACA2CC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

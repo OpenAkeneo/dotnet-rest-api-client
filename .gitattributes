@@ -1,0 +1,4 @@
+# Generated LLM docs are written with LF by tools/DocGen on every OS; keep git from
+# converting them so the CI staleness check (regenerate + diff) stays byte-exact.
+llms.txt text eol=lf
+docs/api/*.md text eol=lf

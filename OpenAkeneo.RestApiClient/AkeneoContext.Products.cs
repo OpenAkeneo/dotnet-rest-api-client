@@ -9,9 +9,37 @@ namespace OpenAkeneo.RestApiClient
 
         #region Products
 
+        /// <summary>
+        /// Builds the query parameters used by the product streamers. Streamers use
+        /// <c>pagination_type=search_after</c> because Akeneo caps page-based pagination at
+        /// 10 000 items; keyset pagination has no such limit.
+        /// </summary>
+        private static Dictionary<string, string> BuildProductStreamParameters(string? search, string? scope, string? locales, bool withAssetShareLinks)
+        {
+            var queryParameters = new Dictionary<string, string>
+            {
+                ["pagination_type"] = "search_after",
+                ["limit"] = "100"
+            };
+
+            if (!string.IsNullOrEmpty(search))
+                queryParameters.Add("search", search);
+
+            if (!string.IsNullOrEmpty(scope))
+                queryParameters.Add("scope", scope);
+
+            if (!string.IsNullOrEmpty(locales))
+                queryParameters.Add("locales", locales);
+
+            if (withAssetShareLinks)
+                queryParameters.Add("with_asset_share_links", "true");
+
+            return queryParameters;
+        }
+
         #region Product UUID
 
-        /// <summary>Streams all UUID-based products, following HAL pagination automatically.</summary>
+        /// <summary>Streams all UUID-based products, following keyset (<c>search_after</c>) pagination automatically — not subject to Akeneo's 10 000-item page-pagination limit.</summary>
         /// <param name="search">Optional JSON-encoded Akeneo search filter.</param>
         /// <param name="scope">Optional channel scope for attribute completeness filtering.</param>
         /// <param name="locales">Optional comma-separated locale codes.</param>
@@ -19,15 +47,21 @@ namespace OpenAkeneo.RestApiClient
         /// <param name="ct">Cancellation token.</param>
         public async IAsyncEnumerable<ProductUuid> StreamProductUuidsAsync(string? search = null, string? scope = null, string? locales = null, bool withAssetShareLinks = false, [EnumeratorCancellation] CancellationToken ct = default)
         {
-            for (int page = 1; ; page++)
+            var queryParameters = BuildProductStreamParameters(search, scope, locales, withAssetShareLinks);
+            while (true)
             {
-                var partial = await GetProductUuidListAsync(page, 100, search, scope, locales, withAssetShareLinks, ct).ConfigureAwait(false);
+                var partial = await GetProductUuidListAsync(queryParameters, ct).ConfigureAwait(false);
                 if (partial.Products != null)
                     foreach (var item in partial.Products)
                         yield return item;
 
                 if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Products == null)
                     yield break;
+
+                var cursor = AkeneoContextHelpers.ExtractSearchAfter(partial.Links.Next.Href);
+                if (string.IsNullOrEmpty(cursor))
+                    yield break;
+                queryParameters["search_after"] = cursor;
             }
         }
 
@@ -41,7 +75,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<ProductUuid>> GetProductUuidListFullAsync(string? search = null, string? scope = null, string? locales = null, bool withAssetShareLinks = false, CancellationToken ct = default)
         {
             var list = new List<ProductUuid>();
-            await foreach (var item in StreamProductUuidsAsync(search, scope, locales, withAssetShareLinks, ct))
+            await foreach (var item in StreamProductUuidsAsync(search, scope, locales, withAssetShareLinks, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -133,15 +167,25 @@ namespace OpenAkeneo.RestApiClient
             return await PatchAndFetchAsync(url, body, () => GetProductUuidAsync(product.Uuid!, ct), ct).ConfigureAwait(false);
         }
 
-        /// <summary>Creates a new UUID-based product via HTTP POST and returns the created entity.</summary>
+        /// <summary>
+        /// Creates a new UUID-based product via HTTP POST and returns the created entity.
+        /// <see cref="ProductUuid.Uuid"/> may be left <c>null</c> — Akeneo then generates the UUID,
+        /// which is resolved from the 201 <c>Location</c> response header.
+        /// </summary>
         /// <param name="product">The product to create.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>The created <see cref="ProductUuid"/>.</returns>
         public async Task<ProductUuid> CreateProductUuidAsync(ProductUuid product, CancellationToken ct = default)
         {
+            const string url = "/api/rest/v1/products-uuid";
             var body = JsonSerializer.Serialize(product);
-            await _service.HttpPostAsync("/api/rest/v1/products-uuid", body, ct).ConfigureAwait(false);
-            return await GetProductUuidAsync(product.Uuid!, ct).ConfigureAwait(false);
+            var (status, _, location) = await _service.HttpPostWithLocationAsync(url, body, ct).ConfigureAwait(false);
+
+            var uuid = product.Uuid ?? AkeneoContextHelpers.ExtractLastPathSegment(location)
+                ?? throw new AkeneoApiException(url, "POST", status,
+                    "Product was created without a client-side UUID, but the response carried no Location header to resolve the generated UUID from.");
+
+            return await GetProductUuidAsync(uuid, ct).ConfigureAwait(false);
         }
 
         /// <summary>Deletes a UUID-based product.</summary>
@@ -176,7 +220,7 @@ namespace OpenAkeneo.RestApiClient
 
         #region Product identifier
 
-        /// <summary>Streams all identifier-based products (legacy API), following HAL pagination automatically.</summary>
+        /// <summary>Streams all identifier-based products (legacy API), following keyset (<c>search_after</c>) pagination automatically — not subject to Akeneo's 10 000-item page-pagination limit.</summary>
         /// <param name="search">Optional JSON-encoded Akeneo search filter.</param>
         /// <param name="scope">Optional channel scope.</param>
         /// <param name="locales">Optional comma-separated locale codes.</param>
@@ -184,15 +228,21 @@ namespace OpenAkeneo.RestApiClient
         /// <param name="ct">Cancellation token.</param>
         public async IAsyncEnumerable<ProductIdentifier> StreamProductIdentifiersAsync(string? search = null, string? scope = null, string? locales = null, bool withAssetShareLinks = false, [EnumeratorCancellation] CancellationToken ct = default)
         {
-            for (int page = 1; ; page++)
+            var queryParameters = BuildProductStreamParameters(search, scope, locales, withAssetShareLinks);
+            while (true)
             {
-                var partial = await GetProductIdentifierListAsync(page, 100, search, scope, locales, withAssetShareLinks, ct).ConfigureAwait(false);
+                var partial = await GetProductIdentifierListAsync(queryParameters, ct).ConfigureAwait(false);
                 if (partial.Products != null)
                     foreach (var item in partial.Products)
                         yield return item;
 
                 if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.Products == null)
                     yield break;
+
+                var cursor = AkeneoContextHelpers.ExtractSearchAfter(partial.Links.Next.Href);
+                if (string.IsNullOrEmpty(cursor))
+                    yield break;
+                queryParameters["search_after"] = cursor;
             }
         }
 
@@ -206,7 +256,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<ProductIdentifier>> GetProductIdentifierListFullAsync(string? search = null, string? scope = null, string? locales = null, bool withAssetShareLinks = false, CancellationToken ct = default)
         {
             var list = new List<ProductIdentifier>();
-            await foreach (var item in StreamProductIdentifiersAsync(search, scope, locales, withAssetShareLinks, ct))
+            await foreach (var item in StreamProductIdentifiersAsync(search, scope, locales, withAssetShareLinks, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -329,7 +379,7 @@ namespace OpenAkeneo.RestApiClient
 
         #region Product model
 
-        /// <summary>Streams all product models, following HAL pagination automatically.</summary>
+        /// <summary>Streams all product models, following keyset (<c>search_after</c>) pagination automatically — not subject to Akeneo's 10 000-item page-pagination limit.</summary>
         /// <param name="search">Optional JSON-encoded Akeneo search filter.</param>
         /// <param name="scope">Optional channel scope.</param>
         /// <param name="locales">Optional comma-separated locale codes.</param>
@@ -337,15 +387,21 @@ namespace OpenAkeneo.RestApiClient
         /// <param name="ct">Cancellation token.</param>
         public async IAsyncEnumerable<ProductModel> StreamProductModelsAsync(string? search = null, string? scope = null, string? locales = null, bool withAssetShareLinks = false, [EnumeratorCancellation] CancellationToken ct = default)
         {
-            for (int page = 1; ; page++)
+            var queryParameters = BuildProductStreamParameters(search, scope, locales, withAssetShareLinks);
+            while (true)
             {
-                var partial = await GetProductModelListAsync(page, 100, search, scope, locales, withAssetShareLinks, ct).ConfigureAwait(false);
+                var partial = await GetProductModelListAsync(queryParameters, ct).ConfigureAwait(false);
                 if (partial.ProductModels != null)
                     foreach (var item in partial.ProductModels)
                         yield return item;
 
                 if (string.IsNullOrEmpty(partial.Links?.Next?.Href) || partial.ProductModels == null)
                     yield break;
+
+                var cursor = AkeneoContextHelpers.ExtractSearchAfter(partial.Links.Next.Href);
+                if (string.IsNullOrEmpty(cursor))
+                    yield break;
+                queryParameters["search_after"] = cursor;
             }
         }
 
@@ -359,7 +415,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<ProductModel>> GetProductModelListFullAsync(string? search = null, string? scope = null, string? locales = null, bool withAssetShareLinks = false, CancellationToken ct = default)
         {
             var list = new List<ProductModel>();
-            await foreach (var item in StreamProductModelsAsync(search, scope, locales, withAssetShareLinks, ct))
+            await foreach (var item in StreamProductModelsAsync(search, scope, locales, withAssetShareLinks, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -504,7 +560,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<ProductMediaFile>> GetProductMediaFileListFullAsync(CancellationToken ct = default)
         {
             var list = new List<ProductMediaFile>();
-            await foreach (var item in StreamProductMediaFilesAsync(ct))
+            await foreach (var item in StreamProductMediaFilesAsync(ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -569,28 +625,50 @@ namespace OpenAkeneo.RestApiClient
             return await _service.HttpGetBytesAsync($"/api/rest/v1/media-files/{codeEscaped}/download", ct).ConfigureAwait(false);
         }
 
+        /// <summary>Downloads a product media file as an unbuffered stream (for large files). Dispose the stream to release the HTTP response.</summary>
+        /// <param name="code">The media file code (may contain path segments separated by <c>/</c>).</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>A stream over the file content.</returns>
+        public async Task<Stream> DownloadProductMediaFileStreamAsync(string code, CancellationToken ct = default)
+        {
+            var codeEscaped = string.Join("/", code.Split('/').Select(Uri.EscapeDataString));
+            return await _service.HttpGetStreamAsync($"/api/rest/v1/media-files/{codeEscaped}/download", ct).ConfigureAwait(false);
+        }
+
         /// <summary>
-        /// Uploads a product media file. Returns the response body (typically empty; the new media file
-        /// code is available via the <c>Location</c> header which Akeneo includes in the 201 response).
-        /// To associate the file with a product attribute value, include a <paramref name="productJson"/>
-        /// part describing the target product, attribute, locale, and scope — see Akeneo docs for the schema.
+        /// Uploads a product media file and returns the created media-file code (resolved from the
+        /// 201 response headers). Akeneo links the upload to the attribute value described by
+        /// <paramref name="productJson"/> or <paramref name="productModelJson"/> — the API requires
+        /// exactly one of the two.
         /// </summary>
         /// <param name="fileBytes">Raw file bytes.</param>
         /// <param name="fileName">Original file name (e.g. <c>photo.jpg</c>).</param>
         /// <param name="contentType">MIME type (e.g. <c>image/jpeg</c>).</param>
         /// <param name="productJson">
-        /// Optional JSON object with the target product reference, e.g.
+        /// JSON object with the target product reference, e.g.
         /// <c>{"identifier":"my-sku","attribute":"picture","scope":null,"locale":null}</c>.
-        /// When provided, Akeneo links the upload to that attribute value automatically.
+        /// </param>
+        /// <param name="productModelJson">
+        /// JSON object with the target product model reference, e.g.
+        /// <c>{"code":"my-model","attribute":"picture","scope":null,"locale":null}</c>.
         /// </param>
         /// <param name="ct">Cancellation token.</param>
-        /// <returns>Response body string (usually empty on success).</returns>
-        public async Task<string> UploadProductMediaFileAsync(byte[] fileBytes, string fileName, string contentType, string? productJson = null, CancellationToken ct = default)
+        /// <returns>The created media-file code.</returns>
+        /// <exception cref="ArgumentException">Thrown when both <paramref name="productJson"/> and <paramref name="productModelJson"/> are provided.</exception>
+        public async Task<string> UploadProductMediaFileAsync(byte[] fileBytes, string fileName, string contentType, string? productJson = null, string? productModelJson = null, CancellationToken ct = default)
         {
-            // Akeneo media-file upload accepts an optional "product" JSON part alongside the "file" part.
-            // HttpPostMultipartAsync handles the file part only; when productJson is absent that is sufficient.
-            // When productJson is present, callers should instead PATCH the attribute value with the returned code.
-            return await _service.HttpPostMultipartAsync("/api/rest/v1/media-files", "file", fileBytes, fileName, contentType, ct).ConfigureAwait(false);
+            // POST /media-files requires a "product" or "product_model" part alongside "file"
+            // (exactly one of the two, per the Akeneo REST API spec).
+            if (productJson != null && productModelJson != null)
+                throw new ArgumentException("Provide either productJson or productModelJson, not both.", nameof(productModelJson));
+
+            Dictionary<string, string>? extraParts = null;
+            if (productJson != null)
+                extraParts = new() { ["product"] = productJson };
+            else if (productModelJson != null)
+                extraParts = new() { ["product_model"] = productModelJson };
+
+            return await _service.HttpPostMultipartAsync("/api/rest/v1/media-files", "file", fileBytes, fileName, contentType, extraParts, ct).ConfigureAwait(false);
         }
 
         #endregion

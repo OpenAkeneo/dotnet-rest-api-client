@@ -111,6 +111,11 @@ namespace OpenAkeneo.RestApiClient.Models
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public bool ValuePerLocale { get; set; }
 
+        /// <summary>Whether this attribute stores a separate value per channel.</summary>
+        [JsonPropertyName("value_per_channel")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public bool ValuePerChannel { get; set; }
+
         /// <summary>Whether a value for this attribute is required for the asset to be considered complete.</summary>
         [JsonPropertyName("is_required_for_completeness")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]

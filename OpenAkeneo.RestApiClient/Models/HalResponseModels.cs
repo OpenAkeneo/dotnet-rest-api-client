@@ -28,6 +28,42 @@ namespace OpenAkeneo.RestApiClient.Models
 
     }
 
+    /// <summary>
+    /// Typed HAL envelope: deserialises the embedded items directly into <typeparamref name="T"/>
+    /// in a single pass (the untyped <see cref="HalResponse"/> retains items as
+    /// <see cref="JsonElement"/>s that must be deserialised a second time).
+    /// </summary>
+    public class HalResponse<T>
+    {
+
+        /// <summary>Pagination navigation links (self, first, next, previous).</summary>
+        [JsonPropertyName("_links")]
+        public HalLinks? Links { get; set; }
+
+        /// <summary>Embedded items container.</summary>
+        [JsonPropertyName("_embedded")]
+        public HalEmbeddedItems<T>? Embedded { get; set; }
+
+        /// <summary>Current page number (1-based).</summary>
+        [JsonPropertyName("current_page")]
+        public int CurrentPage { get; set; }
+
+        /// <summary>Total number of items across all pages (when requested with <c>with_count</c>).</summary>
+        [JsonPropertyName("items_count")]
+        public int ItemsCount { get; set; }
+
+    }
+
+    /// <summary>The <c>_embedded</c> container of a typed HAL response.</summary>
+    public class HalEmbeddedItems<T>
+    {
+
+        /// <summary>The embedded resource items.</summary>
+        [JsonPropertyName("items")]
+        public List<T>? Items { get; set; }
+
+    }
+
     /// <summary>A single HAL hyperlink containing an href URL.</summary>
     public class HalHref
     {

@@ -34,3 +34,9 @@ jobs:
 
       - name: Test
         run: dotnet test OpenAkeneo.RestApiClient.UnitTests --configuration Release --no-build --verbosity normal
+
+      - name: LLM docs are current (DocGen regeneration must be a no-op)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          dotnet run --project tools/DocGen --configuration Release --no-build
+          git diff --exit-code -- llms.txt docs/api

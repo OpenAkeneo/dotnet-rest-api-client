@@ -13,9 +13,15 @@ namespace OpenAkeneo.RestApiClient.Models
     public abstract class ProductBase : HalItemInheritance
     {
 
-        /// <summary>Whether the product is enabled (visible in the storefront).</summary>
+        /// <summary>
+        /// Whether the product is enabled (visible in the storefront). <c>null</c> omits the field
+        /// from write payloads, letting the server default apply (the API defaults new products to
+        /// enabled — a non-nullable <c>bool</c> here used to force-disable products whose callers
+        /// never touched the property).
+        /// </summary>
         [JsonPropertyName("enabled")]
-        public bool Enabled { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? Enabled { get; set; }
 
         /// <summary>Code of the family this product belongs to.</summary>
         [JsonPropertyName("family")]
@@ -373,9 +379,11 @@ namespace OpenAkeneo.RestApiClient.Models
         {
             null => null,
             string s => s,
-            long l => l.ToString(),
-            double d => d.ToString(),
-            decimal m => m.ToString(),
+            // Invariant culture: attribute values are API data, not display text — "12.5" must
+            // not become "12,5" on a de-DE machine.
+            long l => l.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            double d => d.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            decimal m => m.ToString(System.Globalization.CultureInfo.InvariantCulture),
             List<object?> list => StringifyValue(list.FirstOrDefault(x => x != null)),
             _ => null
         };

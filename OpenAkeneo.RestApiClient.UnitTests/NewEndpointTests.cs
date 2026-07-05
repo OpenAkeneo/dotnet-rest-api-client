@@ -87,7 +87,7 @@ public class NewEndpointTests
 
         var svc = Helpers.BuildService(handler);
         var bytes = "fake-image-data"u8.ToArray();
-        var code = await svc.HttpPostMultipartAsync("/api/rest/v1/media-files", "file", bytes, "photo.jpg", "image/jpeg", CT);
+        var code = await svc.HttpPostMultipartAsync("/api/rest/v1/media-files", "file", bytes, "photo.jpg", "image/jpeg", ct: CT);
 
         var req = handler.LastApiRequest!;
         Assert.Equal(HttpMethod.Post, req.Method);
@@ -107,7 +107,7 @@ public class NewEndpointTests
 
         var svc = Helpers.BuildService(handler);
         var code = await svc.HttpPostMultipartAsync(
-            "/api/rest/v1/asset-media-files", "file", "data"u8.ToArray(), "image.png", "image/png", CT);
+            "/api/rest/v1/asset-media-files", "file", "data"u8.ToArray(), "image.png", "image/png", ct: CT);
 
         Assert.Equal("3/c/d/6/3cd6a399_image.png", code);
     }
@@ -124,7 +124,7 @@ public class NewEndpointTests
 
         var svc = Helpers.BuildService(handler);
         var code = await svc.HttpPostMultipartAsync(
-            "/api/rest/v1/asset-media-files", "file", "data"u8.ToArray(), "image.png", "image/png", CT);
+            "/api/rest/v1/asset-media-files", "file", "data"u8.ToArray(), "image.png", "image/png", ct: CT);
 
         Assert.Equal("3/c/d/6/3cd6a399_image.png", code);
     }
@@ -142,7 +142,7 @@ public class NewEndpointTests
 
         var ex = await Assert.ThrowsAsync<AkeneoApiException>(() =>
             svc.HttpPostMultipartAsync(
-                "/api/rest/v1/asset-media-files", "file", "data"u8.ToArray(), "image.png", "image/png", CT));
+                "/api/rest/v1/asset-media-files", "file", "data"u8.ToArray(), "image.png", "image/png", ct: CT));
         Assert.Equal(HttpStatusCode.Created, ex.StatusCode);
     }
 
@@ -338,14 +338,15 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(AttributeJson("new_attr")));
+            FakeHttpHandler.Created(""),                        // POST → 201 empty body (real Akeneo behaviour)
+            FakeHttpHandler.Ok(AttributeJson("new_attr")));     // GET → created entity
 
         var ctx = Helpers.BuildContext(handler);
         var result = await ctx.CreateAttributeAsync(new AkeneoAttribute { Code = "new_attr", Type = "pim_catalog_text", Group = "other" }, CT);
 
-        var req = handler.LastApiRequest!;
-        Assert.Equal(HttpMethod.Post, req.Method);
-        Assert.EndsWith("/attributes", req.RequestUri);
+        var post = handler.Captured.First(r => r.Method == HttpMethod.Post && !r.RequestUri.Contains("/oauth/"));
+        Assert.EndsWith("/attributes", post.RequestUri);
+        Assert.EndsWith("/attributes/new_attr", handler.LastApiRequest!.RequestUri);
         Assert.Equal("new_attr", result.Code);
     }
 
@@ -358,14 +359,15 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(AttributeOptionJson("red")));
+            FakeHttpHandler.Created(""),
+            FakeHttpHandler.Ok(AttributeOptionJson("red")));
 
         var ctx = Helpers.BuildContext(handler);
         var result = await ctx.CreateAttributeOptionAsync("color", new AttributeOption { Code = "red" }, CT);
 
-        var req = handler.LastApiRequest!;
-        Assert.Equal(HttpMethod.Post, req.Method);
-        Assert.EndsWith("/attributes/color/options", req.RequestUri);
+        var post = handler.Captured.First(r => r.Method == HttpMethod.Post && !r.RequestUri.Contains("/oauth/"));
+        Assert.EndsWith("/attributes/color/options", post.RequestUri);
+        Assert.EndsWith("/attributes/color/options/red", handler.LastApiRequest!.RequestUri);
         Assert.Equal("red", result.Code);
     }
 
@@ -378,14 +380,15 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(AttributeGroupJson("marketing")));
+            FakeHttpHandler.Created(""),
+            FakeHttpHandler.Ok(AttributeGroupJson("marketing")));
 
         var ctx = Helpers.BuildContext(handler);
         var result = await ctx.CreateAttributeGroupAsync(new AttributeGroup { Code = "marketing" }, CT);
 
-        var req = handler.LastApiRequest!;
-        Assert.Equal(HttpMethod.Post, req.Method);
-        Assert.EndsWith("/attribute-groups", req.RequestUri);
+        var post = handler.Captured.First(r => r.Method == HttpMethod.Post && !r.RequestUri.Contains("/oauth/"));
+        Assert.EndsWith("/attribute-groups", post.RequestUri);
+        Assert.EndsWith("/attribute-groups/marketing", handler.LastApiRequest!.RequestUri);
         Assert.Equal("marketing", result.Code);
     }
 
@@ -398,14 +401,15 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(AssociationTypeJson("UPSELL")));
+            FakeHttpHandler.Created(""),
+            FakeHttpHandler.Ok(AssociationTypeJson("UPSELL")));
 
         var ctx = Helpers.BuildContext(handler);
         var result = await ctx.CreateAssociationTypeAsync(new AssociationType { Code = "UPSELL" }, CT);
 
-        var req = handler.LastApiRequest!;
-        Assert.Equal(HttpMethod.Post, req.Method);
-        Assert.EndsWith("/association-types", req.RequestUri);
+        var post = handler.Captured.First(r => r.Method == HttpMethod.Post && !r.RequestUri.Contains("/oauth/"));
+        Assert.EndsWith("/association-types", post.RequestUri);
+        Assert.EndsWith("/association-types/UPSELL", handler.LastApiRequest!.RequestUri);
         Assert.Equal("UPSELL", result.Code);
     }
 
@@ -418,14 +422,15 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(FamilyJson("shoes")));
+            FakeHttpHandler.Created(""),
+            FakeHttpHandler.Ok(FamilyJson("shoes")));
 
         var ctx = Helpers.BuildContext(handler);
         var result = await ctx.CreateFamilyAsync(new Family { Code = "shoes" }, CT);
 
-        var req = handler.LastApiRequest!;
-        Assert.Equal(HttpMethod.Post, req.Method);
-        Assert.EndsWith("/families", req.RequestUri);
+        var post = handler.Captured.First(r => r.Method == HttpMethod.Post && !r.RequestUri.Contains("/oauth/"));
+        Assert.EndsWith("/families", post.RequestUri);
+        Assert.EndsWith("/families/shoes", handler.LastApiRequest!.RequestUri);
         Assert.Equal("shoes", result.Code);
     }
 
@@ -438,14 +443,15 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(FamilyVariantJson("shoes_size")));
+            FakeHttpHandler.Created(""),
+            FakeHttpHandler.Ok(FamilyVariantJson("shoes_size")));
 
         var ctx = Helpers.BuildContext(handler);
         var result = await ctx.CreateFamilyVariantAsync("shoes", new FamilyVariant { Code = "shoes_size" }, CT);
 
-        var req = handler.LastApiRequest!;
-        Assert.Equal(HttpMethod.Post, req.Method);
-        Assert.EndsWith("/families/shoes/variants", req.RequestUri);
+        var post = handler.Captured.First(r => r.Method == HttpMethod.Post && !r.RequestUri.Contains("/oauth/"));
+        Assert.EndsWith("/families/shoes/variants", post.RequestUri);
+        Assert.EndsWith("/families/shoes/variants/shoes_size", handler.LastApiRequest!.RequestUri);
         Assert.Equal("shoes_size", result.Code);
     }
 
@@ -458,14 +464,15 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(CategoryJson("summer")));
+            FakeHttpHandler.Created(""),
+            FakeHttpHandler.Ok(CategoryJson("summer")));
 
         var ctx = Helpers.BuildContext(handler);
         var result = await ctx.CreateCategoryAsync(new Category { Code = "summer" }, CT);
 
-        var req = handler.LastApiRequest!;
-        Assert.Equal(HttpMethod.Post, req.Method);
-        Assert.EndsWith("/categories", req.RequestUri);
+        var post = handler.Captured.First(r => r.Method == HttpMethod.Post && !r.RequestUri.Contains("/oauth/"));
+        Assert.EndsWith("/categories", post.RequestUri);
+        Assert.Contains("/categories/summer", handler.LastApiRequest!.RequestUri);
         Assert.Equal("summer", result.Code);
     }
 
@@ -477,12 +484,16 @@ public class NewEndpointTests
             FakeHttpHandler.CreatedWithLocation("/api/rest/v1/media-files/3/b/5/a/3b5a8cbanner.jpg"));
 
         var ctx = Helpers.BuildContext(handler);
-        var code = await ctx.UploadCategoryMediaFileAsync("data"u8.ToArray(), "banner.jpg", "image/jpeg", CT);
+        var categoryJson = """{"code":"summer","attribute_code":"image_1","channel":null,"locale":null}""";
+        var code = await ctx.UploadCategoryMediaFileAsync("data"u8.ToArray(), "banner.jpg", "image/jpeg", categoryJson, CT);
 
         var req = handler.LastApiRequest!;
         Assert.Equal(HttpMethod.Post, req.Method);
         Assert.EndsWith("/category-media-files", req.RequestUri);
         Assert.StartsWith("multipart/form-data", req.ContentType);
+        // The spec-required "category" part must be in the multipart body.
+        Assert.Contains("name=category", req.Body);
+        Assert.Contains("\"attribute_code\":\"image_1\"", req.Body);
         Assert.Equal("3/b/5/a/3b5a8cbanner.jpg", code);
     }
 
@@ -495,14 +506,15 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(ChannelJson("b2b")));
+            FakeHttpHandler.Created(""),
+            FakeHttpHandler.Ok(ChannelJson("b2b")));
 
         var ctx = Helpers.BuildContext(handler);
         var result = await ctx.CreateChannelAsync(new Channel { Code = "b2b" }, CT);
 
-        var req = handler.LastApiRequest!;
-        Assert.Equal(HttpMethod.Post, req.Method);
-        Assert.EndsWith("/channels", req.RequestUri);
+        var post = handler.Captured.First(r => r.Method == HttpMethod.Post && !r.RequestUri.Contains("/oauth/"));
+        Assert.EndsWith("/channels", post.RequestUri);
+        Assert.EndsWith("/channels/b2b", handler.LastApiRequest!.RequestUri);
         Assert.Equal("b2b", result.Code);
     }
 
@@ -698,13 +710,14 @@ public class NewEndpointTests
     {
         var handler = new FakeHttpHandler(
             FakeHttpHandler.TokenResponse(),
-            FakeHttpHandler.Created(FamilyVariantJson("v1")));
+            FakeHttpHandler.Created(""),
+            FakeHttpHandler.Ok(FamilyVariantJson("v1")));
 
         var ctx = Helpers.BuildContext(handler);
         await ctx.CreateFamilyVariantAsync("shoes", new FamilyVariant { Code = "v1" }, CT);
 
-        var req = handler.LastApiRequest!;
-        Assert.Contains("/families/shoes/variants", req.RequestUri);
+        var post = handler.Captured.First(r => r.Method == HttpMethod.Post && !r.RequestUri.Contains("/oauth/"));
+        Assert.Contains("/families/shoes/variants", post.RequestUri);
     }
 
     // -------------------------------------------------------------------------

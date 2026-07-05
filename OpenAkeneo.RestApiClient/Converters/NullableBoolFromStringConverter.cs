@@ -33,6 +33,14 @@ namespace OpenAkeneo.RestApiClient.Converters
                 throw new JsonException($"Cannot convert string '{s}' to bool?.");
             }
 
+            // 0/1 as JSON numbers (PHP-backed APIs are prone to emitting these).
+            if (reader.TokenType == JsonTokenType.Number && reader.TryGetInt64(out var n))
+            {
+                if (n == 1) return true;
+                if (n == 0) return false;
+                throw new JsonException($"Cannot convert number '{n}' to bool?.");
+            }
+
             throw new JsonException($"Unexpected token type '{reader.TokenType}' for bool?.");
         }
 

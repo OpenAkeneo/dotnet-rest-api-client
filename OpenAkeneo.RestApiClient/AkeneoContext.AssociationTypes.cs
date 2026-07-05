@@ -32,7 +32,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<AssociationType>> GetAssociationTypeListFullAsync(bool withCount = false, CancellationToken ct = default)
         {
             var list = new List<AssociationType>();
-            await foreach (var item in StreamAssociationTypesAsync(withCount, ct))
+            await foreach (var item in StreamAssociationTypesAsync(withCount, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -73,12 +73,12 @@ namespace OpenAkeneo.RestApiClient
         }
 
         /// <summary>Returns a single association type by its code.</summary>
-        /// <param name="attributeCode">The association type code.</param>
+        /// <param name="code">The association type code.</param>
         /// <param name="ct">Cancellation token.</param>
         /// <returns>The matching <see cref="AssociationType"/>.</returns>
-        public async Task<AssociationType> GetAssociationTypeAsync(string attributeCode, CancellationToken ct = default)
+        public async Task<AssociationType> GetAssociationTypeAsync(string code, CancellationToken ct = default)
         {
-            var url = $"/api/rest/v1/association-types/{Uri.EscapeDataString(attributeCode)}";
+            var url = $"/api/rest/v1/association-types/{Uri.EscapeDataString(code)}";
 
             var responseString = await _service.HttpGetAsync(url, ct).ConfigureAwait(false);
 
@@ -103,10 +103,10 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>The created <see cref="AssociationType"/>.</returns>
         public async Task<AssociationType> CreateAssociationTypeAsync(AssociationType associationType, CancellationToken ct = default)
         {
-            var url = "/api/rest/v1/association-types";
+            // POST returns 201 with an empty body per the Akeneo spec, so fetch the created entity.
             var body = JsonSerializer.Serialize(associationType);
-            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
-            return AkeneoContextHelpers.DeserializeOrThrow<AssociationType>(responseString, url);
+            await _service.HttpPostAsync("/api/rest/v1/association-types", body, ct).ConfigureAwait(false);
+            return await GetAssociationTypeAsync(associationType.Code, ct).ConfigureAwait(false);
         }
 
         #endregion

@@ -32,7 +32,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<Channel>> GetChannelListFullAsync(bool withCount = false, CancellationToken ct = default)
         {
             var list = new List<Channel>();
-            await foreach (var item in StreamChannelsAsync(withCount, ct))
+            await foreach (var item in StreamChannelsAsync(withCount, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -102,10 +102,10 @@ namespace OpenAkeneo.RestApiClient
         /// <returns>The created <see cref="Channel"/>.</returns>
         public async Task<Channel> CreateChannelAsync(Channel channel, CancellationToken ct = default)
         {
-            var url = "/api/rest/v1/channels";
+            // POST returns 201 with an empty body per the Akeneo spec, so fetch the created entity.
             var body = JsonSerializer.Serialize(channel);
-            var responseString = await _service.HttpPostAsync(url, body, ct).ConfigureAwait(false);
-            return AkeneoContextHelpers.DeserializeOrThrow<Channel>(responseString, url);
+            await _service.HttpPostAsync("/api/rest/v1/channels", body, ct).ConfigureAwait(false);
+            return await GetChannelAsync(channel.Code, ct).ConfigureAwait(false);
         }
 
         #endregion
@@ -135,7 +135,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<Locale>> GetLocaleListFullAsync(bool withCount = false, CancellationToken ct = default)
         {
             var list = new List<Locale>();
-            await foreach (var item in StreamLocalesAsync(withCount, ct))
+            await foreach (var item in StreamLocalesAsync(withCount, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }
@@ -214,7 +214,7 @@ namespace OpenAkeneo.RestApiClient
         public async Task<List<Currency>> GetCurrencyListFullAsync(bool withCount = false, CancellationToken ct = default)
         {
             var list = new List<Currency>();
-            await foreach (var item in StreamCurrenciesAsync(withCount, ct))
+            await foreach (var item in StreamCurrenciesAsync(withCount, ct).ConfigureAwait(false))
                 list.Add(item);
             return list;
         }

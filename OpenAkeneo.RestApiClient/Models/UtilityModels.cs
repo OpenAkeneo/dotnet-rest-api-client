@@ -86,6 +86,11 @@ namespace OpenAkeneo.RestApiClient.Models
     /// </summary>
     public class Extension
     {
+        /// <summary>Unique UUID of the extension. Server-assigned; omit from create payloads.</summary>
+        [JsonPropertyName("uuid")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Uuid { get; set; }
+
         /// <summary>Name of the extension, shown within the Administration interface.</summary>
         [JsonPropertyName("name")]
         public string? Name { get; set; }
