@@ -80,10 +80,22 @@ namespace OpenAkeneo.RestApiClient
             if (string.IsNullOrEmpty(location))
                 return null;
 
-            var path = Uri.TryCreate(location, UriKind.Absolute, out var abs) ? abs.AbsolutePath : location;
-            var queryIdx = path.IndexOf('?');
-            if (queryIdx >= 0)
-                path = path[..queryIdx];
+            // Work on the raw string rather than Uri.AbsolutePath: on Unix a leading-slash value
+            // parses as an absolute file: URI whose AbsolutePath neither strips the query nor
+            // unescapes, so query/fragment stripping and unescaping are done manually here to keep
+            // behaviour identical across platforms.
+            var path = location;
+
+            // Drop scheme://host for genuine http(s) absolute URLs, keeping only the path onward.
+            if (Uri.TryCreate(location, UriKind.Absolute, out var abs)
+                && (abs.Scheme == Uri.UriSchemeHttp || abs.Scheme == Uri.UriSchemeHttps))
+            {
+                path = abs.AbsolutePath;
+            }
+
+            var stopIdx = path.IndexOfAny(new[] { '?', '#' });
+            if (stopIdx >= 0)
+                path = path[..stopIdx];
             path = path.TrimEnd('/');
 
             var idx = path.LastIndexOf('/');

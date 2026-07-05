@@ -269,6 +269,8 @@ public class ConverterAndHelperTests
     [InlineData("/api/rest/v1/products-uuid/gen-2", "gen-2")]
     [InlineData("/api/rest/v1/products-uuid/gen-3/", "gen-3")]
     [InlineData("/api/rest/v1/products-uuid/gen%204?x=1", "gen 4")]
+    [InlineData("/api/rest/v1/products-uuid/gen%205#frag", "gen 5")]
+    [InlineData("https://x/api/rest/v1/products-uuid/gen%206?x=1", "gen 6")]
     [InlineData(null, null)]
     [InlineData("", null)]
     public void ExtractLastPathSegment_HandlesShapes(string? location, string? expected)
